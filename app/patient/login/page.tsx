@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,15 +13,64 @@ import { useRouter } from "next/navigation"
 
 export default function PatientLogin() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login
-    setTimeout(() => {
+    setError("")
+    const form = e.target as HTMLFormElement
+    const email = (form.email as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Login failed")
+      localStorage.setItem("token", data.token)
       router.push("/patient/dashboard")
-    }, 1000)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsRegistering(true)
+    setError("")
+    const form = e.target as HTMLFormElement
+    const name = (form.name as HTMLInputElement).value
+    const email = (form.email as HTMLInputElement).value
+    const phone = (form.phone as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: "patient",
+          profile: { phone }
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Registration failed")
+      // Optionally auto-login after registration
+      router.push("/patient/login")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   return (
@@ -67,6 +115,7 @@ export default function PatientLogin() {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       required
@@ -79,12 +128,14 @@ export default function PatientLogin() {
                     </Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
                       required
                       className="glass-input border-0"
                     />
                   </div>
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
                   <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
@@ -92,12 +143,12 @@ export default function PatientLogin() {
               </TabsContent>
 
               <TabsContent value="register">
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-white">
                       Full Name
                     </Label>
-                    <Input id="name" placeholder="Enter your full name" required className="glass-input border-0" />
+                    <Input id="name" name="name" placeholder="Enter your full name" required className="glass-input border-0" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-white">
@@ -105,6 +156,7 @@ export default function PatientLogin() {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       required
@@ -117,6 +169,7 @@ export default function PatientLogin() {
                     </Label>
                     <Input
                       id="phone"
+                      name="phone"
                       type="tel"
                       placeholder="Enter your phone number"
                       required
@@ -129,14 +182,16 @@ export default function PatientLogin() {
                     </Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Create a password"
                       required
                       className="glass-input border-0"
                     />
                   </div>
-                  <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
+                  <Button type="submit" className="w-full glass-button border-0" disabled={isRegistering}>
+                    {isRegistering ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>

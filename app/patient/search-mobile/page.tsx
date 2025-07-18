@@ -15,99 +15,28 @@ export default function MobileSearch() {
   const searchParams = useSearchParams()
   const medicinesFromPrescription = searchParams.get("medicines")?.split(",") || []
 
-  const allPharmacies = [
-    {
-      id: 1,
-      name: "Apollo Pharmacy",
-      address: "123 Main Street, Downtown",
-      distance: "0.5 km",
-      rating: 4.5,
-      status: "available",
-      price: "₹45",
-      avgPrice: "₹48",
-      phone: "+91 98765 43210",
-      hours: "8:00 AM - 10:00 PM",
-      medicinesStock: {
-        "Paracetamol 500mg": "high",
-        "Amoxicillin 250mg": "high",
-        "Omeprazole 20mg": "high",
-        Insulin: "low",
-      },
-    },
-    {
-      id: 2,
-      name: "MedPlus",
-      address: "456 Park Avenue, Central",
-      distance: "1.2 km",
-      rating: 4.2,
-      status: "low",
-      price: "₹52",
-      avgPrice: "₹48",
-      phone: "+91 98765 43211",
-      hours: "9:00 AM - 9:00 PM",
-      medicinesStock: {
-        "Paracetamol 500mg": "high",
-        "Amoxicillin 250mg": "low",
-        "Omeprazole 20mg": "unavailable",
-        Aspirin: "high",
-      },
-    },
-    {
-      id: 3,
-      name: "Wellness Pharmacy",
-      address: "789 Health Street, Suburb",
-      distance: "2.1 km",
-      rating: 4.8,
-      status: "unavailable",
-      price: "N/A",
-      avgPrice: "₹48",
-      phone: "+91 98765 43212",
-      hours: "Closed",
-      medicinesStock: {
-        "Paracetamol 500mg": "unavailable",
-        Insulin: "unavailable",
-      },
-    },
-  ]
-
-  const [filteredPharmacies, setFilteredPharmacies] = useState(allPharmacies)
+  const [pharmacies, setPharmacies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    if (medicinesFromPrescription.length > 0) {
-      const filtered = allPharmacies
-        .map((pharmacy) => {
-          let availableCount = 0
-          const totalCount = medicinesFromPrescription.length
-          let hasUnavailable = false
-
-          medicinesFromPrescription.forEach((med) => {
-            const stockStatus = pharmacy.medicinesStock[med]
-            if (stockStatus === "high" || stockStatus === "low") {
-              availableCount++
-            } else if (stockStatus === "unavailable") {
-              hasUnavailable = true
-            }
-          })
-
-          return {
-            ...pharmacy,
-            availableCount,
-            totalCount,
-            sortScore: availableCount * 1000 - Number.parseFloat(pharmacy.distance),
-            displayStatus: `${availableCount}/${totalCount} available`,
-            overallStatus:
-              availableCount === totalCount
-                ? "available"
-                : availableCount > 0 && !hasUnavailable
-                  ? "low"
-                  : "unavailable",
-          }
-        })
-        .sort((a, b) => b.sortScore - a.sortScore)
-      setFilteredPharmacies(filtered)
-    } else {
-      setFilteredPharmacies(allPharmacies)
-    }
+    setLoading(true)
+    setError("")
+    fetch("/api/medicines")
+      .then((r) => r.json())
+      .then((data) => {
+        let filtered = Array.isArray(data) ? data : []
+        if (medicinesFromPrescription.length > 0) {
+          filtered = filtered.filter((med) =>
+            medicinesFromPrescription.some((name) =>
+              med.name.toLowerCase().includes(name.trim().toLowerCase())
+            )
+          )
+        }
+        setPharmacies(filtered)
+      })
+      .catch(() => setError("Failed to load pharmacies"))
+      .finally(() => setLoading(false))
   }, [medicinesFromPrescription])
 
   const getStatusColor = (status: string) => {
@@ -236,91 +165,26 @@ export default function MobileSearch() {
       {/* Results */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-medium text-white">Results ({filteredPharmacies.length})</h2>
+          <h2 className="font-medium text-white">Results ({pharmacies.length})</h2>
           <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Sort by distance
+            Sort by name
           </Button>
         </div>
-
+        {loading && <div className="text-gray-400">Loading...</div>}
+        {error && <div className="text-red-400">{error}</div>}
         <div className="space-y-3">
-          {filteredPharmacies.map((pharmacy) => (
-            <Card key={pharmacy.id} className="glass-card border-0">
+          {pharmacies.map((pharmacy) => (
+            <Card key={pharmacy._id} className="glass-card border-0">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-medium text-white">{pharmacy.name}</h3>
-                      <div
-                        className={`w-2 h-2 rounded-full ${getStatusColor(pharmacy.overallStatus || pharmacy.status)}`}
-                      />
+                    <h3 className="font-medium text-white">{pharmacy.name}</h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-400">
+                      <span>Stock: {pharmacy.stock}</span>
+                      <span>Price: ₹{pharmacy.price}</span>
                     </div>
-                    <p className="text-sm text-gray-400 mb-2">{pharmacy.address}</p>
-
-                    <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
-                      <span className="flex items-center">
-                        <Navigation className="h-3 w-3 mr-1" />
-                        {pharmacy.distance}
-                      </span>
-                      <span className="flex items-center">
-                        <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                        {pharmacy.rating}
-                      </span>
-                      <span className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {pharmacy.status !== "unavailable" ? "Open" : "Closed"}
-                      </span>
-                    </div>
-
-                    {medicinesFromPrescription.length > 0 && (
-                      <div className="mb-2">
-                        <Badge
-                          variant={
-                            pharmacy.overallStatus === "available"
-                              ? "default"
-                              : pharmacy.overallStatus === "low"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                          className="glass-button border-0"
-                        >
-                          {pharmacy.displayStatus}
-                        </Badge>
-                      </div>
-                    )}
-
-                    {pharmacy.status !== "unavailable" && (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-semibold text-green-400">{pharmacy.price}</span>
-                          <span className="text-sm text-gray-400 ml-2">Avg: {pharmacy.avgPrice}</span>
-                        </div>
-                        <Badge
-                          variant={pharmacy.status === "available" ? "default" : "secondary"}
-                          className="glass-button border-0"
-                        >
-                          {getStatusText(pharmacy.status)}
-                        </Badge>
-                      </div>
-                    )}
                   </div>
-                </div>
-
-                <div className="flex space-x-2">
-                  <Button size="sm" className="flex-1 glass-button border-0">
-                    <Phone className="h-3 w-3 mr-1" />
-                    Call
-                  </Button>
-                  <Link
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pharmacy.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1"
-                  >
-                    <Button size="sm" className="w-full glass-button border-0">
-                      <Navigation className="h-3 w-3 mr-1" />
-                      Directions
-                    </Button>
-                  </Link>
+                  <div className={`w-3 h-3 rounded-full ${pharmacy.stock > 50 ? "bg-green-500" : pharmacy.stock > 0 ? "bg-yellow-500" : "bg-red-500"}`}></div>
                 </div>
               </CardContent>
             </Card>

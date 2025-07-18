@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,17 +9,67 @@ import { Label } from "@/components/ui/label"
 import { Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function GovernmentLogin() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setTimeout(() => {
+    setError("")
+    const form = e.target as HTMLFormElement
+    const email = (form.email as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Login failed")
+      localStorage.setItem("token", data.token)
       router.push("/government/dashboard")
-    }, 1000)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsRegistering(true)
+    setError("")
+    const form = e.target as HTMLFormElement
+    const name = (form.name as HTMLInputElement).value
+    const email = (form.email as HTMLInputElement).value
+    const department = (form.department as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: "government",
+          governmentInfo: { department }
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Registration failed")
+      router.push("/government/login")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   return (
@@ -49,41 +98,98 @@ export default function GovernmentLogin() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
-                  Official Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="official@health.gov"
-                  required
-                  className="glass-input border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                  className="glass-input border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="otp" className="text-white">
-                  OTP (Optional)
-                </Label>
-                <Input id="otp" placeholder="Enter OTP for extra security" className="glass-input border-0" />
-              </div>
-              <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Secure Sign In"}
-              </Button>
-            </form>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 glass-card bg-transparent border-0">
+                <TabsTrigger value="login" className="glass-button border-0 data-[state=active]:bg-white/20">
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="register" className="glass-button border-0 data-[state=active]:bg-white/20">
+                  Register
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">
+                      Official Email
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="official@health.gov"
+                      required
+                      className="glass-input border-0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-white">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      required
+                      className="glass-input border-0"
+                    />
+                  </div>
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
+                  <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Secure Sign In"}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-white">
+                      Full Name
+                    </Label>
+                    <Input id="name" name="name" placeholder="Enter your full name" required className="glass-input border-0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">
+                      Official Email
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="official@health.gov"
+                      required
+                      className="glass-input border-0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department" className="text-white">
+                      Department
+                    </Label>
+                    <Input id="department" name="department" placeholder="Enter department" required className="glass-input border-0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-white">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="Create a password"
+                      required
+                      className="glass-input border-0"
+                    />
+                  </div>
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
+                  <Button type="submit" className="w-full glass-button border-0" disabled={isRegistering}>
+                    {isRegistering ? "Creating account..." : "Register"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

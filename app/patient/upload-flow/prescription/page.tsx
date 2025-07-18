@@ -21,6 +21,26 @@ export default function PrescriptionUploadFlow() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const router = useRouter()
+  const [imageDataUrl, setImageDataUrl] = useState<string>("");
+  const [patientId, setPatientId] = useState<string>("");
+
+  // Fetch patientId from backend using JWT
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          setPatientId(user._id);
+        }
+      } catch {}
+    };
+    fetchUser();
+  }, []);
 
   const startCamera = useCallback(async () => {
     try {
@@ -66,6 +86,7 @@ export default function PrescriptionUploadFlow() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
       const imageDataUrl = canvas.toDataURL("image/jpeg")
+      setImageDataUrl(imageDataUrl)
       setStep("processing")
 
       try {
@@ -82,6 +103,41 @@ export default function PrescriptionUploadFlow() {
         alert("An error occurred during processing. Please try again.")
         setStep("capture")
       }
+    }
+  }
+
+  const handleSaveAndViewOnMap = async () => {
+    const token = localStorage.getItem("token")
+    if (!patientId) {
+      alert("User not logged in or user ID missing.")
+      return
+    }
+    // Compose ocrText from detectedMedicines
+    const ocrText = detectedMedicines.map(med => med.name).join(", ")
+    const payload = {
+      patientId,
+      imageUrl: imageDataUrl,
+      ocrText,
+      uploadedAt: new Date().toISOString()
+    }
+    try {
+      const res = await fetch("/api/prescriptions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        // After saving, go to map
+        const medicineNames = detectedMedicines.map((med) => med.name).join(",")
+        router.push(`/patient/search-mobile?medicines=${encodeURIComponent(medicineNames)}`)
+      } else {
+        alert("Failed to save prescription.")
+      }
+    } catch {
+      alert("Failed to save prescription.")
     }
   }
 
@@ -187,7 +243,7 @@ export default function PrescriptionUploadFlow() {
               </CardContent>
             </Card>
 
-            <Button onClick={handleViewOnMap} className="w-full h-12 glass-button border-0">
+            <Button onClick={handleSaveAndViewOnMap} className="w-full h-12 glass-button border-0">
               <MapPin className="mr-2 h-5 w-5" />
               View on Map
             </Button>

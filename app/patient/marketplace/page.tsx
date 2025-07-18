@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,57 +9,21 @@ import Link from "next/link"
 
 export default function PatientMarketplace() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [filters, setFilters] = useState({ category: "All", priceRange: "All" })
+  const [marketplace, setMarketplace] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const medicines = [
-    {
-      id: 1,
-      name: "Paracetamol 500mg",
-      description: "Effective for pain relief and fever reduction.",
-      price: "₹48",
-      category: "Pain Relief",
-      rating: 4.5,
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    },
-    {
-      id: 2,
-      name: "Amoxicillin 250mg",
-      description: "Antibiotic used to treat a wide variety of bacterial infections.",
-      price: "₹110",
-      category: "Antibiotics",
-      rating: 4.2,
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    },
-    {
-      id: 3,
-      name: "Omeprazole 20mg",
-      description: "Reduces the amount of acid your stomach makes.",
-      price: "₹40",
-      category: "Digestive Health",
-      rating: 4.7,
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    },
-    {
-      id: 4,
-      name: "Insulin Glargine",
-      description: "Long-acting insulin used to treat type 1 and type 2 diabetes.",
-      price: "₹850",
-      category: "Diabetes",
-      rating: 4.8,
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    },
-    {
-      id: 5,
-      name: "Aspirin 75mg",
-      description: "Used for pain, fever, and inflammation. Also a blood thinner.",
-      price: "₹25",
-      category: "Pain Relief",
-      rating: 4.0,
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    },
-  ]
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    fetch("/api/marketplace")
+      .then((r) => r.json())
+      .then((data) => setMarketplace(Array.isArray(data) ? data : []))
+      .catch(() => setError("Failed to load marketplace"))
+      .finally(() => setLoading(false))
+  }, [])
 
-  const filteredMedicines = medicines.filter((med) => med.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredMedicines = marketplace.filter((med) => med.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-sm mx-auto">
@@ -102,9 +66,11 @@ export default function PatientMarketplace() {
       {/* Medicine List */}
       <div className="p-4">
         <h2 className="font-semibold text-gray-900 mb-4">All Medicines ({filteredMedicines.length})</h2>
+        {loading && <div className="text-gray-400">Loading...</div>}
+        {error && <div className="text-red-400">{error}</div>}
         <div className="grid grid-cols-1 gap-4">
           {filteredMedicines.map((med) => (
-            <Card key={med.id} className="border-0 shadow-sm">
+            <Card key={med._id} className="border-0 shadow-sm">
               <CardContent className="p-4 flex items-center space-x-4">
                 <img
                   src={med.imageUrl || "/placeholder.svg"}
@@ -115,10 +81,10 @@ export default function PatientMarketplace() {
                   <h3 className="font-medium text-gray-900">{med.name}</h3>
                   <p className="text-sm text-gray-600 line-clamp-2 mb-2">{med.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-lg text-green-600">{med.price}</span>
+                    <span className="font-bold text-lg text-green-600">₹{med.price}</span>
                     <div className="flex items-center space-x-1 text-sm text-gray-500">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span>{med.rating}</span>
+                      <span>{med.rating || "-"}</span>
                     </div>
                   </div>
                   <div className="flex space-x-2 mt-3">

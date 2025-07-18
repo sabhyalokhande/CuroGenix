@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,14 +13,65 @@ import { useRouter } from "next/navigation"
 
 export default function PharmacyLogin() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setTimeout(() => {
+    setError("")
+    const form = e.target as HTMLFormElement
+    const email = (form.email as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Login failed")
+      localStorage.setItem("token", data.token)
       router.push("/pharmacy/dashboard")
-    }, 1000)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsRegistering(true)
+    setError("")
+    const form = e.target as HTMLFormElement
+    const name = (form.pharmacyName as HTMLInputElement).value
+    const licenseNumber = (form.license as HTMLInputElement).value
+    const email = (form.email as HTMLInputElement).value
+    const phone = (form.phone as HTMLInputElement).value
+    const address = (form.address as HTMLInputElement).value
+    const password = (form.password as HTMLInputElement).value
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: "pharmacy",
+          pharmacyInfo: { name, licenseNumber, address, contact: phone }
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Registration failed")
+      router.push("/pharmacy/login")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   return (
@@ -66,6 +116,7 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="pharmacy@example.com"
                       required
@@ -78,12 +129,14 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
                       required
                       className="glass-input border-0"
                     />
                   </div>
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
                   <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
@@ -91,13 +144,14 @@ export default function PharmacyLogin() {
               </TabsContent>
 
               <TabsContent value="register">
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="pharmacyName" className="text-white">
                       Pharmacy Name
                     </Label>
                     <Input
                       id="pharmacyName"
+                      name="pharmacyName"
                       placeholder="Enter pharmacy name"
                       required
                       className="glass-input border-0"
@@ -107,7 +161,7 @@ export default function PharmacyLogin() {
                     <Label htmlFor="license" className="text-white">
                       License Number
                     </Label>
-                    <Input id="license" placeholder="Enter license number" required className="glass-input border-0" />
+                    <Input id="license" name="license" placeholder="Enter license number" required className="glass-input border-0" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-white">
@@ -115,6 +169,7 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="pharmacy@example.com"
                       required
@@ -127,6 +182,7 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="phone"
+                      name="phone"
                       type="tel"
                       placeholder="Enter phone number"
                       required
@@ -139,6 +195,7 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="address"
+                      name="address"
                       placeholder="Enter pharmacy address"
                       required
                       className="glass-input border-0"
@@ -150,14 +207,16 @@ export default function PharmacyLogin() {
                     </Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Create a password"
                       required
                       className="glass-input border-0"
                     />
                   </div>
-                  <Button type="submit" className="w-full glass-button border-0" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Register Pharmacy"}
+                  {error && <div className="text-red-400 text-sm">{error}</div>}
+                  <Button type="submit" className="w-full glass-button border-0" disabled={isRegistering}>
+                    {isRegistering ? "Creating account..." : "Register Pharmacy"}
                   </Button>
                 </form>
               </TabsContent>

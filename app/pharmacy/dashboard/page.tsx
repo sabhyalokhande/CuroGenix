@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { PharmacyLayout } from "@/components/layouts/pharmacy-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,11 +10,22 @@ import { Package, TrendingUp, AlertTriangle, Star, Upload, BarChart3, MapPin, Be
 import Link from "next/link"
 
 export default function PharmacyDashboard() {
-  const lowStockItems = [
-    { name: "Paracetamol 500mg", current: 12, minimum: 50, status: "critical" },
-    { name: "Insulin Pen", current: 3, minimum: 10, status: "critical" },
-    { name: "Amoxicillin 250mg", current: 25, minimum: 30, status: "low" },
-  ]
+  const [medicines, setMedicines] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    fetch("/api/medicines")
+      .then((r) => r.json())
+      .then((data) => setMedicines(Array.isArray(data) ? data : []))
+      .catch(() => setError("Failed to load inventory"))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const lowStockItems = medicines.filter((m) => m.stock < 30)
+  const totalItems = medicines.length
 
   const recentAlerts = [
     { message: "Stock for Paracetamol is low across your district", time: "2 hours ago", type: "warning" },
@@ -52,8 +64,8 @@ export default function PharmacyDashboard() {
               <Package className="h-4 w-4 text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">1,247</div>
-              <p className="text-xs text-gray-400">+12 this week</p>
+              <div className="text-2xl font-bold text-white">{totalItems}</div>
+              <p className="text-xs text-gray-400">Inventory count</p>
             </CardContent>
           </Card>
 
@@ -103,19 +115,20 @@ export default function PharmacyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {lowStockItems.length === 0 && <div className="text-gray-400">No low stock items.</div>}
                 {lowStockItems.map((item, index) => (
-                  <div key={index} className="space-y-2">
+                  <div key={item._id || index} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-white">{item.name}</span>
                       <Badge
-                        variant={item.status === "critical" ? "destructive" : "secondary"}
+                        variant={item.stock < 10 ? "destructive" : "secondary"}
                         className="glass-button border-0"
                       >
-                        {item.current} left
+                        {item.stock} left
                       </Badge>
                     </div>
-                    <Progress value={(item.current / item.minimum) * 100} className="h-2" />
-                    <p className="text-xs text-gray-400">Minimum required: {item.minimum}</p>
+                    <Progress value={(item.stock / 30) * 100} className="h-2" />
+                    <p className="text-xs text-gray-400">Minimum required: 30</p>
                   </div>
                 ))}
               </div>
@@ -233,6 +246,8 @@ export default function PharmacyDashboard() {
             </div>
           </CardContent>
         </Card>
+        {loading && <div className="text-center text-gray-400">Loading...</div>}
+        {error && <div className="text-center text-red-400">{error}</div>}
       </div>
     </PharmacyLayout>
   )

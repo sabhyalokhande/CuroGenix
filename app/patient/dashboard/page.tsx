@@ -1,9 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { SheetDescription } from "@/components/ui/sheet"
 import { SheetTitle } from "@/components/ui/sheet"
 import { SheetHeader } from "@/components/ui/sheet"
-import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,17 +27,42 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 export default function PatientDashboard() {
   const [activeTab, setActiveTab] = useState("home")
   const [showUploadOptions, setShowUploadOptions] = useState(false)
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
+  const [receipts, setReceipts] = useState<any[]>([])
+  const [rewards, setRewards] = useState<any[]>([])
+  const [pharmacies, setPharmacies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const fetchData = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const [pres, rec, rew, pharms] = await Promise.all([
+          fetch("/api/prescriptions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+          fetch("/api/receipts", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+          fetch("/api/rewards", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+          fetch("/api/medicines").then(r => r.json()), // Example: treat medicines as pharmacies for now
+        ])
+        setPrescriptions(Array.isArray(pres) ? pres : [])
+        setReceipts(Array.isArray(rec) ? rec : [])
+        setRewards(Array.isArray(rew) ? rew : [])
+        setPharmacies(Array.isArray(pharms) ? pharms : [])
+      } catch (err: any) {
+        setError("Failed to load dashboard data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const quickActions = [
     { icon: Search, label: "Find Medicine", href: "/patient/search-mobile", color: "bg-blue-500/20 text-blue-400" },
     { icon: AlertTriangle, label: "Report Issue", href: "/patient/report", color: "bg-orange-500/20 text-orange-400" },
     { icon: Award, label: "My Rewards", href: "/patient/rewards", color: "bg-yellow-500/20 text-yellow-400" },
-  ]
-
-  const nearbyPharmacies = [
-    { name: "Apollo Pharmacy", distance: "0.5 km", status: "Open", rating: 4.5, availability: "high" },
-    { name: "MedPlus", distance: "1.2 km", status: "Open", rating: 4.2, availability: "medium" },
-    { name: "Wellness", distance: "2.1 km", status: "Closed", rating: 4.8, availability: "low" },
   ]
 
   return (
@@ -82,7 +107,7 @@ export default function PatientDashboard() {
                 <Award className="h-6 w-6 text-green-400" />
                 <div>
                   <p className="text-sm text-gray-300">Your Reward Points</p>
-                  <h2 className="text-xl font-bold text-white">1,247</h2>
+                  <h2 className="text-xl font-bold text-white">{rewards.reduce((acc, r) => acc + (r.points || 0), 0)}</h2>
                 </div>
               </div>
               <Link href="/patient/rewards">
@@ -113,7 +138,7 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* Nearby Pharmacies */}
+        {/* Nearby Pharmacies (showing medicines as a placeholder) */}
         <div className="px-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-white">Nearby Pharmacies</h2>
@@ -122,36 +147,37 @@ export default function PatientDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
-            {nearbyPharmacies.map((pharmacy, index) => (
-              <Card key={index} className="glass-card border-0">
+            {pharmacies.length === 0 && <div className="text-gray-400">No pharmacies found.</div>}
+            {pharmacies.map((pharmacy, index) => (
+              <Card key={pharmacy._id || index} className="glass-card border-0">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
                         <h3 className="font-medium text-white">{pharmacy.name}</h3>
                         <Badge
-                          variant={pharmacy.status === "Open" ? "default" : "secondary"}
+                          variant={"default"}
                           className="text-xs glass-button border-0"
                         >
-                          {pharmacy.status}
+                          {pharmacy.stock > 0 ? "Open" : "Closed"}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-3 text-sm text-gray-400">
                         <span className="flex items-center">
                           <Navigation className="h-3 w-3 mr-1" />
-                          {pharmacy.distance}
+                          {pharmacy.price ? `₹${pharmacy.price}` : "N/A"}
                         </span>
                         <span className="flex items-center">
                           <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                          {pharmacy.rating}
+                          {pharmacy.stock}
                         </span>
                       </div>
                     </div>
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        pharmacy.availability === "high"
+                        pharmacy.stock > 50
                           ? "bg-green-500"
-                          : pharmacy.availability === "medium"
+                          : pharmacy.stock > 0
                             ? "bg-yellow-500"
                             : "bg-red-500"
                       }`}
@@ -162,6 +188,8 @@ export default function PatientDashboard() {
             ))}
           </div>
         </div>
+        {loading && <div className="text-center text-gray-400">Loading...</div>}
+        {error && <div className="text-center text-red-400">{error}</div>}
       </div>
 
       {/* Bottom Navigation */}

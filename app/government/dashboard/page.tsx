@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { GovernmentLayout } from "@/components/layouts/government-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,26 @@ import { Shield, AlertTriangle, Building2, TrendingUp, MapPin, FileText, Brain, 
 import Link from "next/link"
 
 export default function GovernmentDashboard() {
+  const [medicines, setMedicines] = useState<any[]>([])
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    Promise.all([
+      fetch("/api/medicines").then(r => r.json()),
+      fetch("/api/prescriptions").then(r => r.json()),
+    ])
+      .then(([meds, pres]) => {
+        setMedicines(Array.isArray(meds) ? meds : [])
+        setPrescriptions(Array.isArray(pres) ? pres : [])
+      })
+      .catch(() => setError("Failed to load dashboard data"))
+      .finally(() => setLoading(false))
+  }, [])
+
   const topReportedMedicines = [
     { name: "Insulin", reports: 45, severity: "high", trend: "+12%" },
     { name: "Paracetamol", reports: 32, severity: "medium", trend: "+5%" },
@@ -125,29 +146,22 @@ export default function GovernmentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {topReportedMedicines.map((medicine, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 glass-card rounded-lg">
+                {medicines.length === 0 && <div className="text-gray-400">No medicines found.</div>}
+                {medicines.slice(0, 5).map((medicine, index) => (
+                  <div key={medicine._id || index} className="flex items-center justify-between p-3 glass-card rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-white">{medicine.name}</span>
                         <Badge
-                          variant={
-                            medicine.severity === "high"
-                              ? "destructive"
-                              : medicine.severity === "medium"
-                                ? "secondary"
-                                : "outline"
-                          }
+                          variant={medicine.stock < 10 ? "destructive" : medicine.stock < 30 ? "secondary" : "outline"}
                           className="glass-button border-0"
                         >
-                          {medicine.reports} reports
+                          {medicine.stock} in stock
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm text-gray-400">
-                        <span>Severity: {medicine.severity}</span>
-                        <span className={medicine.trend.startsWith("+") ? "text-red-400" : "text-green-400"}>
-                          {medicine.trend}
-                        </span>
+                        <span>Stock: {medicine.stock}</span>
+                        <span className="text-green-400">{medicine.price ? `₹${medicine.price}` : "N/A"}</span>
                       </div>
                     </div>
                   </div>
@@ -158,7 +172,6 @@ export default function GovernmentDashboard() {
               </Link>
             </CardContent>
           </Card>
-
           {/* Recent Anomalies */}
           <Card className="glass-card border-0">
             <CardHeader>
@@ -170,32 +183,17 @@ export default function GovernmentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentAnomalies.map((anomaly, index) => (
-                  <div key={index} className="p-3 glass-card rounded-lg">
+                {prescriptions.length === 0 && <div className="text-gray-400">No anomalies found.</div>}
+                {prescriptions.slice(0, 3).map((pres, index) => (
+                  <div key={pres._id || index} className="p-3 glass-card rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-white">{anomaly.district}</span>
-                      <Badge
-                        variant={
-                          anomaly.severity === "Critical"
-                            ? "destructive"
-                            : anomaly.severity === "High"
-                              ? "secondary"
-                              : "outline"
-                        }
-                        className="glass-button border-0"
-                      >
-                        {anomaly.severity}
-                      </Badge>
+                      <span className="font-medium text-white">Prescription</span>
+                      <Badge variant="secondary" className="glass-button border-0">Detected</Badge>
                     </div>
-                    <p className="text-sm text-gray-400 mb-1">
-                      {anomaly.medicine} - {anomaly.type}
-                    </p>
+                    <p className="text-sm text-gray-400 mb-1">Image: {pres.imageUrl}</p>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center text-gray-400">
-                        <Brain className="h-3 w-3 mr-1" />
-                        {anomaly.confidence}% confidence
-                      </span>
-                      <span className="text-gray-400">{anomaly.time}</span>
+                      <span className="flex items-center text-gray-400">Uploaded: {new Date(pres.uploadedAt).toLocaleString()}</span>
+                      <span className="text-gray-400">ID: {pres._id}</span>
                     </div>
                   </div>
                 ))}
@@ -280,6 +278,8 @@ export default function GovernmentDashboard() {
             </div>
           </CardContent>
         </Card>
+        {loading && <div className="text-center text-gray-400">Loading...</div>}
+        {error && <div className="text-center text-red-400">{error}</div>}
       </div>
     </GovernmentLayout>
   )
