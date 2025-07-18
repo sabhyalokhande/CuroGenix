@@ -70,9 +70,12 @@ export function GovernmentLayout({ children }: GovernmentLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="ai-bg-dark min-h-screen relative">
+      {/* AI Theme Background Glows */}
+      <div className="ai-bg-glow ai-bg-blue"></div>
+      <div className="ai-bg-glow ai-bg-purple"></div>
       {/* Top Navigation */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-transparent shadow-none border-b-0 relative z-10">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">

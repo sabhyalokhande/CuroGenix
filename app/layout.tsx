@@ -19,9 +19,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
-        <Toaster />
+      <body className={inter.className + ' ai-bg-dark min-h-screen relative'}>
+        {/* AI Theme Background Glows */}
+        <div className="ai-bg-glow ai-bg-blue"></div>
+        <div className="ai-bg-glow ai-bg-purple"></div>
+        <div className="relative z-10">
+          {children}
+          <Toaster />
+        </div>
       </body>
     </html>
   )

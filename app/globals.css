@@ -57,3 +57,96 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* --- AI Glass Theme Additions --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Freestyle+Script&display=swap');
+
+.font-lobster-two {
+  font-family: 'Lobster Two', cursive;
+}
+.font-freestyle-script {
+  font-family: 'Freestyle Script', cursive;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { transform: scale(1) translate(-50%, -50%); opacity: 0.15; }
+  50% { transform: scale(1.1) translate(-50%, -50%); opacity: 0.2; }
+}
+@keyframes pulse-slow-reverse {
+  0%, 100% { transform: scale(1); opacity: 0.1; }
+  50% { transform: scale(1.1); opacity: 0.15; }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 15s infinite ease-in-out;
+}
+.animate-pulse-slow-reverse {
+  animation: pulse-slow-reverse 18s infinite ease-in-out;
+}
+
+.glass-button {
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  color: white;
+  transition: all 0.3s ease;
+}
+.glass-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dark-card {
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Background glows for AI theme */
+.ai-bg-glow {
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(3rem);
+  pointer-events: none;
+}
+.ai-bg-blue {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: #3b82f6;
+  opacity: 0.15;
+  animation: pulse-slow 15s infinite ease-in-out;
+}
+.ai-bg-purple {
+  bottom: 0;
+  right: 0;
+  width: 500px;
+  height: 500px;
+  background: #a21caf;
+  opacity: 0.10;
+  animation: pulse-slow-reverse 18s infinite ease-in-out;
+}
+
+/* Utility for dark background */
+.ai-bg-dark {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Utility for glass cards */
+.ai-glass-card {
+  background: rgba(26, 26, 26, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  border-radius: 1.5rem;
+}
