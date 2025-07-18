@@ -33,31 +33,7 @@ interface PharmacyLayoutProps {
 
 export function PharmacyLayout({ children }: PharmacyLayoutProps) {
   const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const NavItems = () => (
-    <>
-      {navigation.map((item) => {
-        const Icon = item.icon
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={cn(
-              "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors glass-button border-0",
-              pathname === item.href
-                ? "bg-blue-500/20 text-blue-400"
-                : "text-gray-300 hover:text-white hover:bg-white/10",
-            )}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <Icon className="mr-3 h-5 w-5" />
-            {item.name}
-          </Link>
-        )
-      })}
-    </>
-  )
+  // Remove sidebar state
 
   return (
     <div className="min-h-screen liquid-glass-bg text-white">
@@ -72,35 +48,15 @@ export function PharmacyLayout({ children }: PharmacyLayoutProps) {
       {/* Top Navigation */}
       <header className="glass-nav shadow-sm border-b border-white/10 relative z-20">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden glass-button border-0">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64 glass-card border-0">
-                  <div className="flex items-center space-x-2 mb-6">
-                    <Building2 className="h-8 w-8 text-blue-400" />
-                    <span className="text-xl font-bold gradient-text">CuroGenix</span>
-                  </div>
-                  <nav className="space-y-1">
-                    <NavItems />
-                  </nav>
-                </SheetContent>
-              </Sheet>
-
-              <Link href="/pharmacy/dashboard" className="flex items-center space-x-2 ml-4 md:ml-0">
+          <div className="flex flex-col">
+            <div className="flex justify-between h-16 items-center">
+              <Link href="/pharmacy/dashboard" className="flex items-center space-x-2">
                 <Building2 className="h-8 w-8 text-blue-400" />
-                <span className="text-xl font-bold hidden sm:block gradient-text">CuroGenix</span>
+                <span className="text-xl font-bold gradient-text">CuroGenix</span>
               </Link>
-            </div>
-
-            <div className="flex items-center space-x-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 glass-button border-0">
+                  <Button variant="ghost" className="flex items-center space-x-2 glass-button border-0 bg-white/5 hover:bg-white/10 text-white">
                     <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-blue-400" />
                     </div>
@@ -120,27 +76,15 @@ export function PharmacyLayout({ children }: PharmacyLayoutProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            {/* Tab Navigation removed */}
           </div>
         </div>
       </header>
 
-      <div className="flex">
-        {/* Sidebar - Desktop */}
-        <nav className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 z-10">
-          <div className="flex-1 flex flex-col min-h-0 glass-nav border-r border-white/10">
-            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto custom-scrollbar">
-              <div className="flex-1 px-3 space-y-1">
-                <NavItems />
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="flex-1 md:pl-64 pt-16 relative z-10">
-          <div className="p-6">{children}</div>
-        </main>
-      </div>
+      {/* Main Content - full width, no sidebar or tabs */}
+      <main className="flex-1 pt-8 relative z-10">
+        <div className="p-6">{children}</div>
+      </main>
     </div>
   )
 }
