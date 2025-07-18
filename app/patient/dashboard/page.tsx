@@ -66,7 +66,7 @@ export default function PatientDashboard() {
   ]
 
   return (
-    <div className="min-h-screen liquid-glass-bg text-white max-w-sm mx-auto relative flex flex-col">
+    <div className="min-h-screen liquid-glass-bg text-white w-full max-w-md mx-auto px-4 relative flex flex-col">
       {/* SVG Filter for Liquid Distortion */}
       <svg style={{ display: "none" }}>
         <filter id="liquidGlass">
@@ -193,7 +193,7 @@ export default function PatientDashboard() {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm glass-nav border-t border-white/10 z-20">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md glass-nav border-t border-white/10 z-20">
         <div className="grid grid-cols-4 py-2">
           {[
             { icon: Home, label: "Home", id: "home", href: "/patient/dashboard" },
@@ -226,7 +226,7 @@ export default function PatientDashboard() {
             <Plus className="h-8 w-8 text-white" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="max-w-sm mx-auto rounded-t-xl dark-glass-card border-white/10">
+        <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-xl dark-glass-card border-white/10">
           <SheetHeader className="text-center">
             <SheetTitle className="text-white">Upload Options</SheetTitle>
             <SheetDescription className="text-gray-400">Choose what you want to upload</SheetDescription>

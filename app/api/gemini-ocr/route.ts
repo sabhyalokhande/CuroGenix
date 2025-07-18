@@ -78,3 +78,16 @@ export async function generatePrescriptionData(imageDataUrl: string): Promise<Ge
     return { success: false, error: `Failed to analyze image with AI: ${error.message || "Unknown error"}` }
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const { imageDataUrl } = await req.json();
+    if (!imageDataUrl) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing imageDataUrl' }), { status: 400 });
+    }
+    const result = await generatePrescriptionData(imageDataUrl);
+    return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ success: false, error: error.message || 'Unknown error' }), { status: 500 });
+  }
+}
