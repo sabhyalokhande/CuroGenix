@@ -137,7 +137,7 @@ export default function MobileSearch() {
   }
 
   return (
-    <div className="min-h-screen liquid-glass-bg text-white max-w-sm mx-auto">
+    <div className="min-h-screen liquid-glass-bg text-white w-full max-w-md mx-auto px-4">
       {/* SVG Filter for Liquid Distortion */}
       <svg style={{ display: "none" }}>
         <filter id="liquidGlass">
@@ -184,7 +184,7 @@ export default function MobileSearch() {
                   <Filter className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="max-w-sm mx-auto dark-glass-card border-white/10">
+              <SheetContent side="bottom" className="max-w-md mx-auto dark-glass-card border-white/10">
                 <SheetHeader>
                   <SheetTitle className="text-white">Filter Results</SheetTitle>
                   <SheetDescription className="text-gray-400">Refine your search results</SheetDescription>

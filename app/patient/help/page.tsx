@@ -55,7 +55,7 @@ export default function HelpPage() {
   }
 
   return (
-    <div className="min-h-screen liquid-glass-bg text-white max-w-sm mx-auto">
+    <div className="min-h-screen liquid-glass-bg text-white w-full max-w-md mx-auto px-4">
       {/* SVG Filter for Liquid Distortion */}
       <svg style={{ display: "none" }}>
         <filter id="liquidGlass">

@@ -29,7 +29,7 @@ export default function MobileScan() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-sm mx-auto">
+    <div className="min-h-screen bg-gray-50 w-full max-w-md mx-auto px-4">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="flex items-center p-4">
