@@ -156,6 +156,16 @@ export default function GovernmentDashboard() {
           <p className="text-xl text-gray-300">Monitor medicine availability and detect anomalies across all districts</p>
         </div>
 
+        {/* Critical Reports Button */}
+        <div className="flex justify-end mb-2">
+          <a href="/government/alerts">
+            <button className="glass-button bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition-all flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Critical Reports
+            </button>
+          </a>
+        </div>
+
         {/* Key Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <HoverCard>
