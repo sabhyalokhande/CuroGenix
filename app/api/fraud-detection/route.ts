@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Database not connected' }, { status: 500 })
     }
     const fraudAlerts = await db
-      .collection('fraud_location')
+      .collection('reports') // Changed to 'reports' collection
       .find({})
       .sort({ timestamp: -1 })
       .limit(100)
