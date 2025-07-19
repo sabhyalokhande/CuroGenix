@@ -94,6 +94,9 @@ export interface IReceipt extends Document {
   patientId: mongoose.Types.ObjectId;
   imageUrl: string;
   ocrText?: string;
+  pharmacyName?: string;
+  totalAmount?: number;
+  items?: any[];
   uploadedAt: Date;
 }
 
@@ -101,6 +104,9 @@ const ReceiptSchema = new Schema<IReceipt>({
   patientId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   imageUrl: { type: String, required: true },
   ocrText: String,
+  pharmacyName: String,
+  totalAmount: Number,
+  items: [Schema.Types.Mixed],
   uploadedAt: { type: Date, default: Date.now },
 });
 
@@ -140,4 +146,32 @@ const MarketplaceSchema = new Schema<IMarketplace>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const Marketplace = models.Marketplace || model<IMarketplace>('Marketplace', MarketplaceSchema); 
+export const Marketplace = models.Marketplace || model<IMarketplace>('Marketplace', MarketplaceSchema);
+
+export interface IReport extends Document {
+  userId: mongoose.Types.ObjectId;
+  medicineName: string;
+  receiptPrice: number;
+  expectedPrice: number;
+  priceDifference: number;
+  pharmacyId: mongoose.Types.ObjectId;
+  pharmacyName: string;
+  receiptId: mongoose.Types.ObjectId;
+  reportedAt: Date;
+  status: 'pending' | 'investigating' | 'resolved';
+}
+
+const ReportSchema = new Schema<IReport>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  medicineName: { type: String, required: true },
+  receiptPrice: { type: Number, required: true },
+  expectedPrice: { type: Number, required: true },
+  priceDifference: { type: Number, required: true },
+  pharmacyId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  pharmacyName: { type: String, required: true },
+  receiptId: { type: Schema.Types.ObjectId, ref: 'Receipt', required: true },
+  reportedAt: { type: Date, default: Date.now },
+  status: { type: String, enum: ['pending', 'investigating', 'resolved'], default: 'pending' }
+})
+
+export const Report = models.Report || model<IReport>('Report', ReportSchema) 

@@ -21,8 +21,11 @@ export default function PharmacyInventory() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+  useEffect(() => {
+    setToken(typeof window !== "undefined" ? localStorage.getItem("token") : null)
+  }, [])
 
   const fetchMedicines = async () => {
     setLoading(true)

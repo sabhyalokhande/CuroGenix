@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Receipt } from '@/lib/models';
 import jwt from 'jsonwebtoken';
+import { JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
 
@@ -30,12 +31,51 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = verifyAuth(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  await dbConnect();
-  const data = await req.json();
-  const doc = await Receipt.create(data);
-  return NextResponse.json(doc);
+  try {
+    await dbConnect()
+    
+    const auth = req.headers.get('authorization')
+    if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    const token = auth.split(' ')[1]
+    let decoded: JwtPayload | null = null
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
+    } catch {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+    
+    if (!decoded || typeof decoded !== 'object' || !decoded.userId) {
+      return NextResponse.json({ error: 'Invalid token payload' }, { status: 401 })
+    }
+
+    const { imageUrl, pharmacyName, totalAmount, items } = await req.json()
+    
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'Image URL is required' }, { status: 400 })
+    }
+
+    const receipt = new Receipt({
+      patientId: decoded.userId,
+      imageUrl,
+      pharmacyName: pharmacyName || "Unknown Pharmacy",
+      totalAmount: totalAmount || 0,
+      items: items || [],
+      uploadedAt: new Date()
+    })
+
+    await receipt.save()
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Receipt uploaded successfully',
+      receiptId: receipt._id 
+    })
+
+  } catch (error: any) {
+    console.error('Receipt upload error:', error)
+    return NextResponse.json({ error: 'Failed to upload receipt' }, { status: 500 })
+  }
 }
 
 export async function PUT(req: NextRequest) {
