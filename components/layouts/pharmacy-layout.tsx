@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Building2, Package, Upload, BarChart3, MapPin, Bell, Settings, Menu, User, LogOut } from "lucide-react"
 import Link from "next/link"
@@ -33,7 +33,29 @@ interface PharmacyLayoutProps {
 
 export function PharmacyLayout({ children }: PharmacyLayoutProps) {
   const pathname = usePathname()
-  // Remove sidebar state
+  const [pharmacyName, setPharmacyName] = useState("Pharmacy")
+
+  // Get current user and pharmacy info
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Use pharmacy name from user data, fallback to user name
+        const name = data.pharmacyInfo?.name || data.name || "Pharmacy";
+        setPharmacyName(name);
+      })
+      .catch(err => {
+        console.error('Failed to fetch user:', err);
+        setPharmacyName("Pharmacy");
+      });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen liquid-glass-bg text-white">
@@ -60,7 +82,7 @@ export function PharmacyLayout({ children }: PharmacyLayoutProps) {
                     <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-blue-400" />
                     </div>
-                    <span className="hidden sm:block text-white">Apollo Pharmacy</span>
+                    <span className="hidden sm:block text-white">{pharmacyName}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="glass-card border-0">

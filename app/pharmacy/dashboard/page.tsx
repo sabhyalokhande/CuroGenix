@@ -10,7 +10,6 @@ import { Package, TrendingUp, AlertTriangle, Star, Upload, BarChart3, MapPin, Be
 import Link from "next/link"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
 
 export default function PharmacyDashboard() {
@@ -18,30 +17,92 @@ export default function PharmacyDashboard() {
   const [medicines, setMedicines] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [user, setUser] = useState<any>(null)
+  const [pharmacyName, setPharmacyName] = useState("Pharmacy")
+
+  // Get current user and pharmacy info
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setUser(data);
+        // Use pharmacy name from user data, fallback to user name
+        const name = data.pharmacyInfo?.name || data.name || "Pharmacy";
+        setPharmacyName(name);
+      })
+      .catch(err => {
+        console.error('Failed to fetch user:', err);
+        setPharmacyName("Pharmacy");
+      });
+    }
+  }, []);
+
+  // Get pharmacy ID from user data
+  const pharmacyId = user?._id
 
   useEffect(() => {
+    if (!pharmacyId) return;
+    
     setLoading(true)
     setError("")
-    fetch("/api/medicines")
+    fetch(`/api/medicines?pharmacyId=${pharmacyId}`)
       .then((r) => r.json())
       .then((data) => setMedicines(Array.isArray(data) ? data : []))
       .catch(() => setError("Failed to load inventory"))
       .finally(() => setLoading(false))
-  }, [])
+  }, [pharmacyId])
 
-  const lowStockItems = medicines.filter((m) => m.stock < 30)
+  const lowStockItems = medicines.filter((m) => m.stock < m.minimumStock)
   const totalItems = medicines.length
 
-  const allAlerts = [
-    { message: "Stock for Paracetamol is low across your district", time: "2 hours ago", type: "warning" },
-    { message: "Insulin is unavailable in 5+ nearby pharmacies", time: "4 hours ago", type: "info" },
-    { message: "Your pricing is competitive for Aspirin", time: "1 day ago", type: "success" },
-    { message: "Ibuprofen stock is below minimum in your area", time: "2 days ago", type: "warning" },
-    { message: "New government pricing update released", time: "3 days ago", type: "info" },
-    { message: "Antibiotic sales spike detected", time: "4 days ago", type: "warning" },
-  ];
-  const [showAllAlerts, setShowAllAlerts] = useState(false);
-  const alertsToShow = showAllAlerts ? allAlerts : allAlerts.slice(0, 3);
+  // Generate simple low stock alerts based on stock levels
+  const generateLowStockAlerts = () => {
+    const alerts = [];
+    
+    if (lowStockItems.length === 0) {
+      alerts.push({
+        message: "Great! All your inventory items are well-stocked.",
+        type: "success",
+        priority: "low",
+        suggestion: "Continue monitoring your inventory levels regularly."
+      });
+    } else {
+      // Critical alerts (stock < 50% of minimum)
+      const criticalItems = lowStockItems.filter(item => item.stock < item.minimumStock / 2);
+      criticalItems.forEach(item => {
+        alerts.push({
+          message: `${item.name} is critically low (${item.stock}/${item.minimumStock})`,
+          type: "critical",
+          priority: "high",
+          suggestion: `Restock ${item.name} immediately`,
+          urgency: "immediate"
+        });
+      });
+
+      // Warning alerts (stock < minimum but > 50%)
+      const warningItems = lowStockItems.filter(item => item.stock >= item.minimumStock / 2);
+      warningItems.forEach(item => {
+        alerts.push({
+          message: `${item.name} stock is low (${item.stock}/${item.minimumStock})`,
+          type: "warning",
+          priority: "medium",
+          suggestion: `Consider restocking ${item.name} soon`,
+          urgency: "soon"
+        });
+      });
+    }
+    
+    return alerts;
+  };
+
+  const alerts = generateLowStockAlerts();
+  const alertsToShow = alerts.slice(0, 3);
 
   return (
     <PharmacyLayout>
@@ -50,11 +111,21 @@ export default function PharmacyDashboard() {
           {/* Welcome Section */}
           <div className="glass-card p-8 animate-liquid-flow rounded-2xl shadow-xl mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-extrabold mb-2 text-white">Welcome back, Apollo Pharmacy!</h1>
+              <h1 className="text-3xl font-extrabold mb-2 text-white">Welcome back, {pharmacyName}!</h1>
               <p className="text-gray-300 mb-4">Manage your inventory and stay competitive in your district</p>
-              <div className="flex flex-wrap gap-3 mb-4">
-                <Button className="glass-button border-0" onClick={() => router.push("/pharmacy/manage-inventory")}>Manage Inventory</Button>
-                <Button className="glass-button border-0" onClick={() => router.push("/pharmacy/update-inventory")}>Update Inventory</Button>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/pharmacy/manage-inventory">
+                  <Button className="glass-button border-0">
+                    <Package className="mr-2 h-4 w-4" />
+                    Manage Inventory
+                  </Button>
+                </Link>
+                <Link href="/pharmacy/update-inventory">
+                  <Button className="glass-button border-0">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload CSV
+                  </Button>
+                </Link>
               </div>
               <div className="flex flex-wrap gap-4 items-center text-sm mt-2">
                 <span className="flex items-center gap-1 text-blue-300"><MapPin className="h-4 w-4" /> Mumbai, Maharashtra</span>
@@ -169,7 +240,7 @@ export default function PharmacyDashboard() {
                     <AlertTriangle className="h-5 w-5 text-orange-400 group-hover:scale-110 transition-transform" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-extrabold text-white mb-1">8</div>
+                    <div className="text-3xl font-extrabold text-white mb-1">{lowStockItems.length}</div>
                     <p className="text-xs text-gray-400">Need attention</p>
                   </CardContent>
                 </Card>
@@ -181,9 +252,18 @@ export default function PharmacyDashboard() {
                     <span className="text-base font-bold text-white">Low Stock Medicines</span>
                   </div>
                   <div className="flex flex-col gap-1 text-xs text-gray-200">
-                    <div className="flex justify-between"><span>Paracetamol 500mg</span><span className="font-bold text-red-400">12 left</span></div>
-                    <div className="flex justify-between"><span>Insulin Pen</span><span className="font-bold text-red-400">3 left</span></div>
-                    <div className="flex justify-between"><span>Amoxicillin 250mg</span><span className="font-bold text-yellow-400">25 left</span></div>
+                    {lowStockItems.length === 0 ? (
+                      <div className="text-gray-400">No low stock items</div>
+                    ) : (
+                      lowStockItems.slice(0, 3).map((item, idx) => (
+                        <div key={idx} className="flex justify-between">
+                          <span>{item.name}</span>
+                          <span className={`font-bold ${item.stock < item.minimumStock / 2 ? 'text-red-400' : 'text-yellow-400'}`}>
+                            {item.stock} left
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                   <div className="border-t border-white/10 my-2"></div>
                   <div className="flex justify-end">
@@ -207,22 +287,36 @@ export default function PharmacyDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                {lowStockItems.length === 0 && <div className="text-gray-400">No low stock items.</div>}
-                  {lowStockItems.map((item, index) => (
-                    <div key={item._id || index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-white">{item.name}</span>
-                        <Badge
-                          variant={item.stock < 10 ? "destructive" : "secondary"}
-                          className="glass-button border-0"
-                        >
-                          {item.stock} left
-                        </Badge>
+                  {lowStockItems.length === 0 ? (
+                    <div className="text-gray-400 text-center py-4">🎉 All items are well-stocked!</div>
+                  ) : (
+                    lowStockItems.map((item, index) => (
+                      <div key={item._id || index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-white">{item.name}</span>
+                          <Badge
+                            className={`glass-button border-0 ${
+                              item.stock < item.minimumStock / 2 
+                                ? "bg-red-500/20 text-red-400" 
+                                : "bg-orange-500/20 text-orange-400"
+                            }`}
+                          >
+                            {item.stock} left
+                          </Badge>
+                        </div>
+                        <Progress 
+                          value={(item.stock / item.minimumStock) * 100} 
+                          className={`h-2 ${
+                            item.stock < item.minimumStock / 2 ? "bg-red-500/20" : "bg-orange-500/20"
+                          }`}
+                        />
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>Min: {item.minimumStock}</span>
+                          <span>₹{item.price}</span>
+                        </div>
                       </div>
-                      <Progress value={(item.stock / 30) * 100} className="h-2" />
-                      <p className="text-xs text-gray-400">Minimum required: 30</p>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 <Button className="w-full mt-4 glass-button border-0" onClick={() => router.push("/pharmacy/update-inventory")}>Update Inventory</Button>
               </CardContent>
@@ -239,29 +333,45 @@ export default function PharmacyDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {alertsToShow.map((alert, index) => (
-                    <div key={index} className="flex items-start space-x-3 p-3 glass-card rounded-lg">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 ${
-                          alert.type === "warning"
-                            ? "bg-orange-500"
-                            : alert.type === "info"
-                              ? "bg-blue-500"
-                              : "bg-green-500"
-                        }`}
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm text-white">{alert.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">{alert.time}</p>
+                  {alertsToShow.length === 0 ? (
+                    <div className="text-center text-gray-400 py-4">No alerts to display</div>
+                  ) : (
+                    alertsToShow.map((alert, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-3 glass-card rounded-lg">
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            alert.type === "critical"
+                              ? "bg-red-500"
+                              : alert.type === "warning"
+                                ? "bg-orange-500"
+                                : alert.type === "success"
+                                  ? "bg-green-500"
+                                  : "bg-blue-500"
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-white font-medium">{alert.message}</p>
+                          {alert.suggestion && (
+                            <p className="text-xs text-blue-400 mt-1">💡 {alert.suggestion}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge 
+                              className={`text-xs ${
+                                alert.priority === "high" 
+                                  ? "bg-red-500/20 text-red-400" 
+                                  : alert.priority === "medium"
+                                    ? "bg-orange-500/20 text-orange-400"
+                                    : "bg-blue-500/20 text-blue-400"
+                              }`}
+                            >
+                              {alert.priority} priority
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-                {(!showAllAlerts && allAlerts.length > 3) && (
-                  <Button className="w-full mt-4 glass-button border-0" onClick={() => setShowAllAlerts(true)}>
-                    View All Alerts
-                  </Button>
-                )}
               </CardContent>
             </Card>
           </div>

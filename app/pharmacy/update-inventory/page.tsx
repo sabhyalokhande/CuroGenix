@@ -3,26 +3,24 @@ import { PharmacyLayout } from "@/components/layouts/pharmacy-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Upload, Edit3, Trash2 } from "lucide-react"
+import { Upload, Edit3, Trash2, AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 
-function parseCSV(text: string) {
-  // Simple CSV parser for demo: expects name,stock,minimum
-  const lines = text.trim().split("\n")
-  return lines.map(line => {
-    const [name, stock, minimum] = line.split(",")
-    return { name, stock: parseInt(stock), minimum: parseInt(minimum) }
-  })
-}
+
 
 export default function UpdateInventory() {
+  const router = useRouter()
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvData, setCsvData] = useState<any[]>([])
   const [manualName, setManualName] = useState("")
   const [manualStock, setManualStock] = useState("")
+  const [manualPrice, setManualPrice] = useState("")
   const [manualEntries, setManualEntries] = useState<any[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [uploadMessage, setUploadMessage] = useState("")
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
@@ -39,17 +37,96 @@ export default function UpdateInventory() {
 
   async function handleUpload() {
     if (!csvFile) return
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUploadStatus('error')
+      setUploadMessage('Please login first')
+      return;
+    }
+    
     setUploading(true)
-    const text = await csvFile.text()
-    setCsvData(parseCSV(text))
-    setUploading(false)
+    setUploadStatus('uploading')
+    setUploadMessage("Uploading and processing CSV file...")
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', csvFile)
+      
+      const response = await fetch('/api/inventory/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        setUploadStatus('success')
+        setUploadMessage(result.message)
+        // Refresh the page after successful upload
+        setTimeout(() => {
+          router.push('/pharmacy/manage-inventory')
+        }, 2000)
+      } else {
+        setUploadStatus('error')
+        setUploadMessage(result.error || 'Upload failed')
+      }
+    } catch (error) {
+      setUploadStatus('error')
+      setUploadMessage('Network error occurred')
+    } finally {
+      setUploading(false)
+    }
   }
 
-  function handleManualSave() {
-    if (!manualName || !manualStock) return
-    setManualEntries([...manualEntries, { name: manualName, stock: parseInt(manualStock) }])
-    setManualName("")
-    setManualStock("")
+  async function handleManualSave() {
+    if (!manualName || !manualStock || !manualPrice) return
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login first');
+      return;
+    }
+    
+    try {
+      const medicineData = {
+        name: manualName,
+        stock: parseInt(manualStock),
+        price: parseFloat(manualPrice),
+        description: '',
+        manufacturer: '',
+        category: '',
+        batchNumber: '',
+        location: ''
+      }
+      
+      const response = await fetch('/api/medicines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(medicineData)
+      })
+      
+      if (response.ok) {
+        setManualEntries([...manualEntries, { 
+          name: manualName, 
+          stock: parseInt(manualStock),
+          price: parseFloat(manualPrice)
+        }])
+        setManualName("")
+        setManualStock("")
+        setManualPrice("")
+      } else {
+        alert('Failed to save medicine')
+      }
+    } catch (error) {
+      alert('Error saving medicine')
+    }
   }
 
   function handleRemoveManual(idx: number) {
@@ -91,33 +168,27 @@ export default function UpdateInventory() {
                 </div>
               )}
             </div>
-            <Button className="mt-4 w-full" disabled={!csvFile || uploading} onClick={handleUpload}>{uploading ? "Uploading..." : "Upload"}</Button>
-            {csvData.length > 0 && (
-              <div className="mt-4">
-                <div className="font-semibold mb-2">Uploaded Data</div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left border-separate border-spacing-y-1">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-2">Medicine</th>
-                        <th className="px-4 py-2">Stock</th>
-                        <th className="px-4 py-2">Minimum Required</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {csvData.map((row, idx) => (
-                        <tr key={idx} className={idx % 2 === 0 ? "bg-white/5" : "bg-white/0"}>
-                          <td className="px-4 py-2">{row.name}</td>
-                          <td className="px-4 py-2">{row.stock}</td>
-                          <td className="px-4 py-2">{row.minimum}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            <Button className="mt-4 w-full" disabled={!csvFile || uploading} onClick={handleUpload}>
+              {uploading ? "Uploading..." : "Upload"}
+            </Button>
+            
+            {/* Upload Status */}
+            {uploadStatus !== 'idle' && (
+              <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
+                uploadStatus === 'success' ? 'bg-green-500/20 text-green-400' :
+                uploadStatus === 'error' ? 'bg-red-500/20 text-red-400' :
+                'bg-blue-500/20 text-blue-400'
+              }`}>
+                {uploadStatus === 'success' && <CheckCircle className="h-4 w-4" />}
+                {uploadStatus === 'error' && <XCircle className="h-4 w-4" />}
+                {uploadStatus === 'uploading' && <AlertCircle className="h-4 w-4" />}
+                <span className="text-sm">{uploadMessage}</span>
               </div>
             )}
-            <div className="mt-2 text-xs text-gray-400">Accepted format: .csv (columns: name, stock, minimum)</div>
+            
+            <div className="mt-2 text-xs text-gray-400">
+              Accepted format: .csv (columns: name, stock, price, manufacturer, category, batchNumber, location)
+            </div>
           </CardContent>
         </Card>
         {/* Manual Entry Section */}
@@ -129,7 +200,9 @@ export default function UpdateInventory() {
           <CardContent>
             <div className="flex flex-col gap-3">
               <Input placeholder="Medicine Name" value={manualName} onChange={e => setManualName(e.target.value)} />
-              <Input placeholder="Stock" value={manualStock} onChange={e => setManualStock(e.target.value)} />
+              <Input placeholder="Stock" type="number" value={manualStock} onChange={e => setManualStock(e.target.value)} />
+
+              <Input placeholder="Price (₹)" type="number" step="0.01" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
               <Button className="w-full" onClick={handleManualSave}>Save</Button>
               <div className="text-xs text-gray-400">Tip: Start typing to see suggestions from past data.</div>
             </div>
@@ -142,6 +215,7 @@ export default function UpdateInventory() {
                       <tr>
                         <th className="px-4 py-2">Medicine</th>
                         <th className="px-4 py-2">Stock</th>
+                        <th className="px-4 py-2">Price</th>
                         <th className="px-4 py-2">Actions</th>
                       </tr>
                     </thead>
@@ -150,6 +224,7 @@ export default function UpdateInventory() {
                         <tr key={idx} className={idx % 2 === 0 ? "bg-white/5" : "bg-white/0"}>
                           <td className="px-4 py-2">{row.name}</td>
                           <td className="px-4 py-2">{row.stock}</td>
+                          <td className="px-4 py-2">₹{row.price}</td>
                           <td className="px-4 py-2">
                             <Button size="icon" variant="ghost" onClick={() => handleRemoveManual(idx)}><Trash2 className="h-4 w-4" /></Button>
                           </td>

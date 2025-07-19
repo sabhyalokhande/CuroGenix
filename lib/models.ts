@@ -57,19 +57,29 @@ export interface IMedicine extends Document {
   name: string;
   description?: string;
   stock: number;
+  minimumStock: number;
   price: number;
   manufacturer?: string;
   expiryDate?: Date;
+  category?: string;
+  batchNumber?: string;
+  location?: string;
+  lastUpdated: Date;
 }
 
 const MedicineSchema = new Schema<IMedicine>({
   pharmacyId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   description: String,
-  stock: { type: Number, required: true },
-  price: { type: Number, required: true },
+  stock: { type: Number, required: true, min: 0 },
+  minimumStock: { type: Number, required: true, default: 10, min: 0 },
+  price: { type: Number, required: true, min: 0 },
   manufacturer: String,
   expiryDate: Date,
+  category: String,
+  batchNumber: String,
+  location: String,
+  lastUpdated: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 export const Medicine = models.Medicine || model<IMedicine>('Medicine', MedicineSchema);
@@ -140,4 +150,6 @@ const MarketplaceSchema = new Schema<IMarketplace>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const Marketplace = models.Marketplace || model<IMarketplace>('Marketplace', MarketplaceSchema); 
+export const Marketplace = models.Marketplace || model<IMarketplace>('Marketplace', MarketplaceSchema);
+
+ 
