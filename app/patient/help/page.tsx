@@ -129,7 +129,7 @@ export default function HelpPage() {
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Email Support</span>
-              <span className="text-blue-400">support@medipulse.com</span>
+              <span className="text-blue-400">support@curogenix.com</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Phone Support</span>

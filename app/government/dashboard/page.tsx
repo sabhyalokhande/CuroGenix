@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge"
 import { Shield, AlertTriangle, Building2, TrendingUp, MapPin, FileText, Brain, Download } from "lucide-react"
 import Link from "next/link"
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
+import InteractiveIndiaMapMaplibre from "@/components/ui/interactive-india-map-maplibre"
 
 export default function GovernmentDashboard() {
   const [medicines, setMedicines] = useState<any[]>([])
   const [prescriptions, setPrescriptions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [svgContent, setSvgContent] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [hoveredState, setHoveredState] = useState<string | null>(null)
 
@@ -109,58 +109,7 @@ export default function GovernmentDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Effect to fetch SVG content once on component mount
-  useEffect(() => {
-    const fetchSvg = async () => {
-      try {
-        const response = await fetch("/india.svg")
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const text = await response.text()
-        setSvgContent(text)
-      } catch (error) {
-        console.error("Failed to fetch SVG:", error)
-        setSvgContent(null)
-      }
-    }
-    fetchSvg()
-  }, [])
 
-  // Effect to set data attributes and add tooltips to SVG paths
-  useEffect(() => {
-    if (svgContent) {
-      setTimeout(() => {
-        const svgContainer = document.querySelector(".india-map-svg-container")
-        if (svgContainer) {
-          const svgElement = svgContainer.querySelector("svg")
-          if (svgElement) {
-            const paths = svgElement.querySelectorAll("path")
-            paths.forEach((path) => {
-              const stateName = path.getAttribute("title")
-              if (stateName && availabilityData[stateName]) {
-                const stateData = availabilityData[stateName]
-                
-                // Set data attribute for CSS targeting
-                path.setAttribute("data-availability", stateData.status)
-                
-                // Add hover event listeners
-                path.addEventListener("mouseenter", (e) => {
-                  // Set the hovered state
-                  setHoveredState(stateName)
-                })
-                
-                path.addEventListener("mouseleave", () => {
-                  // Clear the hovered state
-                  setHoveredState(null)
-                })
-              }
-            })
-          }
-        }
-      }, 200)
-    }
-  }, [svgContent, availabilityData])
 
   const topReportedMedicines = [
     { name: "Insulin", reports: 45, severity: "high", trend: "+12%" },
@@ -199,50 +148,7 @@ export default function GovernmentDashboard() {
 
   return (
     <GovernmentLayout user={user}>
-      <style>
-        {`
-          /* Map specific styles */
-          .india-map-svg-container svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            transform: scale(0.9);
-            transform-origin: center;
-          }
-          .india-map-svg-container svg path {
-            fill: #1f2937;
-            stroke: #3b82f6;
-            stroke-width: 1px;
-            transition: fill 0.3s ease, filter 0.3s ease;
-            opacity: 0.9;
-            cursor: pointer;
-          }
-          .india-map-svg-container svg path:hover {
-            filter: brightness(1.3);
-            stroke-width: 2px;
-          }
-          .india-map-svg-container svg path[data-availability="good"]:hover {
-            fill: #22c55e;
-            filter: drop-shadow(0 0 8px #22c55e);
-          }
-          .india-map-svg-container svg path[data-availability="low"]:hover {
-            fill: #ef4444;
-            filter: drop-shadow(0 0 8px #ef4444);
-          }
-          .india-map-svg-container {
-            border-radius: 12px;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-        `}
-      </style>
+
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="glass-card p-8 animate-liquid-flow">
@@ -555,35 +461,27 @@ export default function GovernmentDashboard() {
             </CardDescription>
             
             {/* State Data Display */}
-            {hoveredState && availabilityData[hoveredState] && (
+            {hoveredState && (
               <div className="mt-4 p-4 glass-card rounded-lg border border-white/10">
                 <div className="flex items-center gap-3 mb-3">
-                  {availabilityData[hoveredState].status === 'good' ? (
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  ) : (
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  )}
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <h3 className="text-lg font-semibold text-white">{hoveredState}</h3>
-                  <span className={`text-sm font-medium px-2 py-1 rounded ${
-                    availabilityData[hoveredState].status === 'good' 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-red-500/20 text-red-400'
-                  }`}>
-                    {availabilityData[hoveredState].status === 'good' ? 'Good Stock' : 'Low Stock'}
+                  <span className="text-sm font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-400">
+                    Interactive Map
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">{availabilityData[hoveredState].stock.toLocaleString()}</div>
-                    <div className="text-gray-400">Total Stock</div>
+                    <div className="text-2xl font-bold text-blue-400">Real-time</div>
+                    <div className="text-gray-400">Data</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-400">{availabilityData[hoveredState].pharmacies}</div>
-                    <div className="text-gray-400">Pharmacies</div>
+                    <div className="text-2xl font-bold text-orange-400">Zoom</div>
+                    <div className="text-gray-400">Enabled</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">100%</div>
-                    <div className="text-gray-400">Coverage</div>
+                    <div className="text-2xl font-bold text-green-400">Cities</div>
+                    <div className="text-gray-400">Visible</div>
                   </div>
                 </div>
               </div>
@@ -671,16 +569,10 @@ export default function GovernmentDashboard() {
 
               </div>
 
-              {/* Map Container */}
-              <div className="flex-1 bg-black rounded-xl overflow-hidden flex items-center justify-center p-4">
-                {svgContent ? (
-                  <div
-                    className="india-map-svg-container w-full h-full flex items-center justify-center"
-                    dangerouslySetInnerHTML={{ __html: svgContent }}
-                  />
-                ) : (
-                  <div className="text-gray-500">Loading map...</div>
-                )}
+              {/* Interactive Map Container */}
+              <div className="flex-1 bg-black rounded-xl overflow-hidden relative">
+                <div className="text-white text-center font-bold py-2 bg-gray-900/80">District Availability Overview</div>
+                <InteractiveIndiaMapMaplibre />
               </div>
 
               {/* Right Panel */}
@@ -785,7 +677,7 @@ export default function GovernmentDashboard() {
             <div className="flex justify-center mt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-400 mb-2">Interactive India Medicine Availability Map</p>
-                <p className="text-xs text-gray-500">Hover over states to view detailed stock information</p>
+                <p className="text-xs text-gray-500">Zoom in to see cities • Hover over markers for details • Real-time data</p>
               </div>
             </div>
           </CardContent>
