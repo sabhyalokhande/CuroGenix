@@ -7,9 +7,10 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MediPulse - Medical Supply Tracking",
+  title: "CuroGenix - Medical Supply Tracking",
   description: "Track medicine availability, report issues, and manage pharmacy inventory",
-    generator: 'v0.dev'
+    generator: 'InnovateX',
+  applicationName: "CuroGenix",
 }
 
 export default function RootLayout({

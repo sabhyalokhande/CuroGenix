@@ -22,22 +22,25 @@ export default function MobileSearch() {
   useEffect(() => {
     setLoading(true)
     setError("")
-    fetch("/api/medicines")
+    fetch('/api/pharmacies')
       .then((r) => r.json())
       .then((data) => {
         let filtered = Array.isArray(data) ? data : []
         if (medicinesFromPrescription.length > 0) {
-          filtered = filtered.filter((med) =>
-            medicinesFromPrescription.some((name) =>
-              med.name.toLowerCase().includes(name.trim().toLowerCase())
-            )
-          )
+          // For pharmacies, we'll show all pharmacies since they might have the medicines
+          // In a real app, you'd query medicines by pharmacy and filter accordingly
+          filtered = filtered
         }
         setPharmacies(filtered)
       })
-      .catch(() => setError("Failed to load pharmacies"))
+      .catch((err) => {
+        console.error("Error fetching pharmacies:", err)
+        setError("Failed to load pharmacies")
+      })
       .finally(() => setLoading(false))
   }, [medicinesFromPrescription])
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,11 +87,11 @@ export default function MobileSearch() {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="font-semibold text-white">Find Medicine</h1>
+            <h1 className="font-semibold text-white">Find Pharmacies</h1>
             {medicinesFromPrescription.length > 0 ? (
-              <p className="text-sm text-gray-400">Searching for: {medicinesFromPrescription.join(", ")}</p>
+              <p className="text-sm text-gray-400">Pharmacies near you</p>
             ) : (
-              <p className="text-sm text-gray-400">Search all medicines</p>
+              <p className="text-sm text-gray-400">Search all pharmacies</p>
             )}
           </div>
           <Button variant="ghost" size="sm" onClick={() => setShowMap(!showMap)} className="p-2 glass-button border-0">
@@ -102,7 +105,7 @@ export default function MobileSearch() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search medicine..."
+                placeholder="Search pharmacies..."
                 className="pl-10 glass-input border-0"
                 defaultValue={medicinesFromPrescription.join(", ")}
               />
@@ -152,12 +155,15 @@ export default function MobileSearch() {
           <div className="text-center">
             <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-300">Interactive map</p>
-            <p className="text-sm text-gray-400">Green: Available | Yellow: Low | Red: Out</p>
+            <p className="text-sm text-gray-400">Green: Open | Red: Closed</p>
             {medicinesFromPrescription.length > 0 && (
               <p className="text-xs text-gray-400 mt-1">
-                Showing availability for: {medicinesFromPrescription.join(", ")}
+                Showing pharmacies near you
               </p>
             )}
+            <div className="mt-4 text-xs text-gray-400">
+              <p>Found {pharmacies.length} pharmacies</p>
+            </div>
           </div>
         </div>
       ) : null}
@@ -165,26 +171,48 @@ export default function MobileSearch() {
       {/* Results */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-medium text-white">Results ({pharmacies.length})</h2>
+          <h2 className="font-medium text-white">Nearby Pharmacies ({pharmacies.length})</h2>
           <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Sort by name
+            Sort by distance
           </Button>
         </div>
         {loading && <div className="text-gray-400">Loading...</div>}
         {error && <div className="text-red-400">{error}</div>}
+        {!loading && !error && pharmacies.length === 0 && (
+          <div className="text-gray-400">No pharmacies found.</div>
+        )}
         <div className="space-y-3">
-          {pharmacies.map((pharmacy) => (
-            <Card key={pharmacy._id} className="glass-card border-0">
+          {pharmacies.map((pharmacy, index) => (
+            <Card key={pharmacy._id || index} className="glass-card border-0">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-white">{pharmacy.name}</h3>
+                    <h3 className="font-medium text-white">{pharmacy.name || 'Unknown Pharmacy'}</h3>
                     <div className="flex items-center space-x-2 text-sm text-gray-400">
-                      <span>Stock: {pharmacy.stock}</span>
-                      <span>Price: ₹{pharmacy.price}</span>
+                      <span className="flex items-center">
+                        <Navigation className="h-3 w-3 mr-1" />
+                        {pharmacy.distance || 'N/A'} km
+                      </span>
+                      <span className="flex items-center">
+                        <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+                        {pharmacy.rating || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-400 mt-1">
+                      {pharmacy.address || 'Address not available'}
                     </div>
                   </div>
-                  <div className={`w-3 h-3 rounded-full ${pharmacy.stock > 50 ? "bg-green-500" : pharmacy.stock > 0 ? "bg-yellow-500" : "bg-red-500"}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${pharmacy.isOpen ? "bg-green-500" : "bg-red-500"}`}></div>
+                </div>
+                <div className="flex space-x-2 mt-3">
+                  <Button size="sm" className="flex-1 glass-button border-0">
+                    <Phone className="h-3 w-3 mr-1" />
+                    Call
+                  </Button>
+                  <Button size="sm" className="flex-1 glass-button border-0">
+                    <Navigation className="h-3 w-3 mr-1" />
+                    Directions
+                  </Button>
                 </div>
               </CardContent>
             </Card>

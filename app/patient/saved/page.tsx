@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,26 @@ import Link from "next/link"
 export default function SavedPage() {
   const [activeTab, setActiveTab] = useState("medicines")
   const [searchQuery, setSearchQuery] = useState("")
+  const [savedPharmacies, setSavedPharmacies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    fetch("/api/pharmacies")
+      .then((r) => r.json())
+      .then((data) => {
+        // For demo purposes, we'll use the first 3 pharmacies as "saved"
+        const demoPharmacies = Array.isArray(data) ? data.slice(0, 3).map((pharmacy, index) => ({
+          ...pharmacy,
+          savedDate: index === 0 ? "1 week ago" : index === 1 ? "3 days ago" : "5 days ago"
+        })) : []
+        setSavedPharmacies(demoPharmacies)
+      })
+      .catch(() => setError("Failed to load saved pharmacies"))
+      .finally(() => setLoading(false))
+  }, [])
 
   const savedMedicines = [
     {
@@ -42,38 +62,7 @@ export default function SavedPage() {
     },
   ]
 
-  const savedPharmacies = [
-    {
-      id: 1,
-      name: "Apollo Pharmacy",
-      address: "123 Main Street, Downtown",
-      distance: "0.5 km",
-      rating: 4.5,
-      status: "Open",
-      phone: "+91 98765 43210",
-      savedDate: "1 week ago",
-    },
-    {
-      id: 2,
-      name: "MedPlus",
-      address: "456 Park Avenue, Central",
-      distance: "1.2 km",
-      rating: 4.2,
-      status: "Open",
-      phone: "+91 98765 43211",
-      savedDate: "3 days ago",
-    },
-    {
-      id: 3,
-      name: "Wellness Pharmacy",
-      address: "789 Health Street, Suburb",
-      distance: "2.1 km",
-      rating: 4.8,
-      status: "Closed",
-      phone: "+91 98765 43212",
-      savedDate: "5 days ago",
-    },
-  ]
+
 
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
@@ -208,7 +197,9 @@ export default function SavedPage() {
         {/* Pharmacies Tab */}
         {activeTab === "pharmacies" && (
           <div className="space-y-4">
-            {filteredPharmacies.length === 0 ? (
+            {loading && <div className="text-center text-gray-400">Loading saved pharmacies...</div>}
+            {error && <div className="text-center text-red-400">{error}</div>}
+            {!loading && !error && filteredPharmacies.length === 0 ? (
               <Card className="glass-card border-0">
                 <CardContent className="p-8 text-center">
                   <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -221,24 +212,24 @@ export default function SavedPage() {
               </Card>
             ) : (
               filteredPharmacies.map((pharmacy) => (
-                <Card key={pharmacy.id} className="glass-card border-0">
+                <Card key={pharmacy._id} className="glass-card border-0">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <h3 className="font-medium text-white">{pharmacy.name}</h3>
                           <Badge
-                            variant={pharmacy.status === "Open" ? "default" : "secondary"}
+                            variant={pharmacy.isOpen ? "default" : "secondary"}
                             className="text-xs glass-button border-0"
                           >
-                            {pharmacy.status}
+                            {pharmacy.isOpen ? "Open" : "Closed"}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-400 mb-2">{pharmacy.address}</p>
                         <div className="flex items-center space-x-4 text-sm text-gray-400 mb-1">
                           <span className="flex items-center">
                             <Navigation className="h-3 w-3 mr-1" />
-                            {pharmacy.distance}
+                            {pharmacy.distance} km
                           </span>
                           <span className="flex items-center">
                             <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />

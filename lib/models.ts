@@ -157,6 +157,7 @@ export interface IReport extends Document {
   pharmacyId: mongoose.Types.ObjectId;
   pharmacyName: string;
   receiptId: mongoose.Types.ObjectId;
+  pharmacyLocation?: string;
   reportedAt: Date;
   status: 'pending' | 'investigating' | 'resolved';
 }
@@ -170,6 +171,7 @@ const ReportSchema = new Schema<IReport>({
   pharmacyId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   pharmacyName: { type: String, required: true },
   receiptId: { type: Schema.Types.ObjectId, ref: 'Receipt', required: true },
+  pharmacyLocation: { type: String },
   reportedAt: { type: Date, default: Date.now },
   status: { type: String, enum: ['pending', 'investigating', 'resolved'], default: 'pending' }
 })

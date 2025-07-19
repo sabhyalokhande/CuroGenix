@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PatientLayout } from "@/components/layouts/patient-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,8 +21,23 @@ export default function PatientSearch() {
   const [searchQuery, setSearchQuery] = useState("")
   const [distanceRange, setDistanceRange] = useState([5])
   const [selectedPharmacy, setSelectedPharmacy] = useState(null)
+  const [pharmacies, setPharmacies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const pharmacies = [
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    fetch("/api/pharmacies")
+      .then((r) => r.json())
+      .then((data) => {
+        setPharmacies(Array.isArray(data) ? data : [])
+      })
+      .catch(() => setError("Failed to load pharmacies"))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const mockPharmacies = [
     {
       id: 1,
       name: "Apollo Pharmacy",
@@ -177,29 +192,29 @@ export default function PatientSearch() {
               </Select>
             </div>
 
+            {loading && <div className="text-center py-4">Loading pharmacies...</div>}
+            {error && <div className="text-center py-4 text-red-500">{error}</div>}
             {pharmacies.map((pharmacy) => (
-              <Card key={pharmacy.id} className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={pharmacy._id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h3 className="font-semibold flex items-center">
                         {pharmacy.name}
-                        {pharmacy.verified && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            Verified
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          Verified
+                        </Badge>
                       </h3>
                       <p className="text-sm text-muted-foreground">{pharmacy.address}</p>
                     </div>
-                    <div className={`w-3 h-3 rounded-full ${getStatusColor(pharmacy.status)}`} />
+                    <div className={`w-3 h-3 rounded-full ${pharmacy.isOpen ? "bg-green-500" : "bg-red-500"}`} />
                   </div>
 
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <span className="flex items-center">
                         <Navigation className="h-3 w-3 mr-1" />
-                        {pharmacy.distance}
+                        {pharmacy.distance} km
                       </span>
                       <span className="flex items-center">
                         <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
@@ -207,71 +222,65 @@ export default function PatientSearch() {
                       </span>
                     </div>
                     <Badge
-                      variant={
-                        pharmacy.status === "available"
-                          ? "default"
-                          : pharmacy.status === "low"
-                            ? "secondary"
-                            : "destructive"
-                      }
+                      variant={pharmacy.isOpen ? "default" : "destructive"}
                     >
-                      {getStatusText(pharmacy.status)}
+                      {pharmacy.isOpen ? "Open" : "Closed"}
                     </Badge>
                   </div>
 
-                  {pharmacy.status !== "unavailable" && (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-semibold text-green-600">{pharmacy.price}</span>
-                        <span className="text-sm text-muted-foreground ml-2">Avg: {pharmacy.avgPrice}</span>
-                      </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm">View Details</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>{pharmacy.name}</DialogTitle>
-                            <DialogDescription>{pharmacy.address}</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span>Status:</span>
-                              <Badge variant={pharmacy.status === "available" ? "default" : "secondary"}>
-                                {getStatusText(pharmacy.status)}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span>Price:</span>
-                              <span className="font-semibold">{pharmacy.price}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span>District Average:</span>
-                              <span>{pharmacy.avgPrice}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span>Hours:</span>
-                              <span>{pharmacy.hours}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span>Contact:</span>
-                              <span>{pharmacy.phone}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button className="flex-1">
-                                <Phone className="mr-2 h-4 w-4" />
-                                Call
-                              </Button>
-                              <Button variant="outline" className="flex-1 bg-transparent">
-                                <AlertTriangle className="mr-2 h-4 w-4" />
-                                Report Issue
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Contact: {pharmacy.contact}</span>
                     </div>
-                  )}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm">View Details</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{pharmacy.name}</DialogTitle>
+                          <DialogDescription>{pharmacy.address}</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span>Status:</span>
+                            <Badge variant={pharmacy.isOpen ? "default" : "destructive"}>
+                              {pharmacy.isOpen ? "Open" : "Closed"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Distance:</span>
+                            <span className="font-semibold">{pharmacy.distance} km</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Rating:</span>
+                            <span className="flex items-center">
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                              {pharmacy.rating}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>License:</span>
+                            <span>{pharmacy.licenseNumber}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Contact:</span>
+                            <span>{pharmacy.contact}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button className="flex-1">
+                              <Phone className="mr-2 h-4 w-4" />
+                              Call
+                            </Button>
+                            <Button variant="outline" className="flex-1 bg-transparent">
+                              <Navigation className="mr-2 h-4 w-4" />
+                              Directions
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -293,7 +302,7 @@ export default function PatientSearch() {
                     <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-500">Interactive map will be displayed here</p>
                     <p className="text-sm text-gray-400 mt-1">
-                      Green markers: Available | Yellow: Low Stock | Red: Unavailable
+                      Green markers: Open | Red: Closed
                     </p>
                   </div>
                 </div>

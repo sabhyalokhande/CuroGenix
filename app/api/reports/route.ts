@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid token payload' }, { status: 401 })
     }
 
-    const { medicineName, receiptPrice, expectedPrice, pharmacyId, pharmacyName, receiptId } = await req.json()
+    const { medicineName, receiptPrice, expectedPrice, pharmacyId, pharmacyName, receiptId, pharmacyLocation } = await req.json()
+    console.log('Received pharmacyLocation:', pharmacyLocation);
     
     if (!medicineName || !receiptPrice || !expectedPrice || !pharmacyId || !pharmacyName || !receiptId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -40,7 +41,8 @@ export async function POST(req: NextRequest) {
       priceDifference,
       pharmacyId,
       pharmacyName,
-      receiptId
+      receiptId,
+      pharmacyLocation
     })
 
     await report.save()

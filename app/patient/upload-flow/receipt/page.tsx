@@ -23,6 +23,8 @@ export default function ReceiptUploadFlow() {
   const [patientId, setPatientId] = useState<string>("")
   const [cameraAvailable, setCameraAvailable] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pharmacyLocation, setPharmacyLocation] = useState<string>("")
+  const [locationRequired, setLocationRequired] = useState(false)
 
   // Fetch patientId from backend using JWT
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function ReceiptUploadFlow() {
         if (!data.success) throw new Error(data.error || "Gemini OCR failed")
         let alert = false
         let points = 0
-        data.data.forEach((item: any) => {
+        Array.isArray(data.data) && data.data.forEach((item: any) => {
           const price = parseFloat((item.price || item.estPrice || "0").replace(/[^\d.]/g, ""))
           const estPrice = parseFloat((item.estPrice || item.price || "0").replace(/[^\d.]/g, ""))
           if (price > estPrice) {
@@ -110,8 +112,13 @@ export default function ReceiptUploadFlow() {
         })
         setShowAlert(alert)
         setPointsEarned(points)
+        // Use extracted pharmacyName and location if present
+        const extractedPharmacyName = data.pharmacyName || ""
+        const extractedLocation = data.location || ""
+        setPharmacyLocation(extractedLocation)
+        setLocationRequired(!extractedLocation)
         setReceiptData({
-          pharmacyName: "",
+          pharmacyName: extractedPharmacyName,
           totalAmount: "",
           items: data.data || []
         })
@@ -157,7 +164,7 @@ export default function ReceiptUploadFlow() {
         if (!data.success) throw new Error(data.error || "Gemini OCR failed");
         let alert = false;
         let points = 0;
-        data.data.forEach((item: any) => {
+        Array.isArray(data.data) && data.data.forEach((item: any) => {
           const price = parseFloat((item.price || item.estPrice || "0").replace(/[^\d.]/g, ""));
           const estPrice = parseFloat((item.estPrice || item.price || "0").replace(/[^\d.]/g, ""));
           if (price > estPrice) {
@@ -169,8 +176,13 @@ export default function ReceiptUploadFlow() {
         });
         setShowAlert(alert);
         setPointsEarned(points);
+        // Use extracted pharmacyName and location if present
+        const extractedPharmacyName = data.pharmacyName || "";
+        const extractedLocation = data.location || "";
+        setPharmacyLocation(extractedLocation);
+        setLocationRequired(!extractedLocation);
         setReceiptData({
-          pharmacyName: "",
+          pharmacyName: extractedPharmacyName,
           totalAmount: "",
           items: data.data || []
         });
@@ -208,6 +220,11 @@ export default function ReceiptUploadFlow() {
 
   // Update handleConfirm to store receipt and post reward
   const handleConfirm = async () => {
+    if (!pharmacyLocation || pharmacyLocation.trim() === "") {
+      setLocationRequired(true)
+      setError("Pharmacy location is required.")
+      return
+    }
     setStep("success")
     try {
       const res = await fetch("/api/receipts", {
@@ -222,6 +239,7 @@ export default function ReceiptUploadFlow() {
           pharmacyName: receiptData.pharmacyName,
           totalAmount: receiptData.totalAmount,
           items: receiptData.items,
+          pharmacyLocation: pharmacyLocation,
           uploadedAt: new Date().toISOString()
         })
       })
@@ -285,7 +303,8 @@ export default function ReceiptUploadFlow() {
           expectedPrice,
           pharmacyId: "507f1f77bcf86cd799439011", // Default pharmacy ID as requested
           pharmacyName: receiptData.pharmacyName || "Unknown Pharmacy",
-          receiptId: receiptId
+          receiptId: receiptId,
+          pharmacyLocation: pharmacyLocation
         })
       })
 
@@ -435,6 +454,25 @@ export default function ReceiptUploadFlow() {
                     onChange={(e) => setReceiptData({ ...receiptData, pharmacyName: e.target.value })}
                     className="glass-input border-0"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="pharmacyLocation" className="text-white">
+                    Pharmacy Location <span className="text-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="pharmacyLocation"
+                    value={pharmacyLocation}
+                    onChange={(e) => {
+                      setPharmacyLocation(e.target.value)
+                      setLocationRequired(!e.target.value)
+                      setError("")
+                    }}
+                    className={`glass-input border-0 ${locationRequired ? 'border-red-400' : ''}`}
+                    placeholder="Enter pharmacy address/location"
+                  />
+                  {locationRequired && (
+                    <div className="text-red-400 text-xs mt-1">Pharmacy location is required.</div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="totalAmount" className="text-white">

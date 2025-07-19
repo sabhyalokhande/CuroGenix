@@ -81,7 +81,7 @@ async function getExpectedPrice(name: string, receiptPrice: string): Promise<str
   }
 }
 
-export async function generateReceiptData(imageDataUrl: string): Promise<ReceiptApiResponse> {
+export async function generateReceiptData(imageDataUrl: string): Promise<any> {
   try {
     // Extract base64 part from data URL
     const imageBase64 = imageDataUrl.split(",")[1];
@@ -100,7 +100,12 @@ export async function generateReceiptData(imageDataUrl: string): Promise<Receipt
             },
             {
               type: "text",
-              text: `Analyze this receipt/bill image. Extract all item names and their actual prices from the receipt. Format the output strictly as a JSON array of objects, where each object has 'name' (string) and 'price' (string like '₹XX.XX'). If no items are found, return an empty JSON array: []. Do NOT include any conversational text or markdown formatting outside the JSON.`,
+              text: `Analyze this receipt/bill image. Extract:
+- The pharmacy name (string, key: pharmacyName)
+- The pharmacy address/location (string, key: location)
+- All item names and their actual prices from the receipt (array, key: items, where each object has 'name' and 'price')
+Format the output strictly as a JSON object with keys: pharmacyName, location, items. Example: { "pharmacyName": "...", "location": "...", "items": [ { "name": "...", "price": "..." } ] }
+If any field is missing, use an empty string or empty array. Do NOT include any conversational text or markdown formatting outside the JSON.`,
             },
           ],
         },
@@ -109,10 +114,10 @@ export async function generateReceiptData(imageDataUrl: string): Promise<Receipt
 
     // Extract the pure JSON string from the raw text response
     const jsonString = extractJsonFromMarkdown(rawText);
-    let parsedData = JSON.parse(jsonString) as ReceiptItem[];
+    let parsedData = JSON.parse(jsonString);
 
     // Generate random expected prices for all items
-    const correctedData = await Promise.all(parsedData.map(async (item) => {
+    const correctedItems = await Promise.all((parsedData.items || []).map(async (item: any) => {
       const estPrice = await getExpectedPrice(item.name, item.price);
       return {
         name: item.name,
@@ -121,7 +126,12 @@ export async function generateReceiptData(imageDataUrl: string): Promise<Receipt
       };
     }));
 
-    return { success: true, data: correctedData };
+    return {
+      success: true,
+      data: correctedItems,
+      pharmacyName: parsedData.pharmacyName || "",
+      location: parsedData.location || ""
+    };
   } catch (error: any) {
     console.error("Gemini API error:", error);
     if (error.message.includes("API key not found")) {

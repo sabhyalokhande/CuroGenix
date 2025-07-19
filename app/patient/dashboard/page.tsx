@@ -20,6 +20,7 @@ import {
   FileText,
   ReceiptText,
   Award,
+  Camera,
 } from "lucide-react"
 import Link from "next/link"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -44,7 +45,7 @@ export default function PatientDashboard() {
           fetch("/api/prescriptions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
           fetch("/api/receipts", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
           fetch("/api/rewards", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-          fetch("/api/medicines").then(r => r.json()), // Example: treat medicines as pharmacies for now
+          fetch("/api/pharmacies").then(r => r.json()), // Fetch pharmacies from MongoDB
         ])
         setPrescriptions(Array.isArray(pres) ? pres : [])
         setReceipts(Array.isArray(rec) ? rec : [])
@@ -147,7 +148,7 @@ export default function PatientDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
-            {pharmacies.length === 0 && <div className="text-gray-400">No pharmacies found.</div>}
+            {pharmacies.length === 0 && <div className="text-gray-400">No nearby pharmacies found.</div>}
             {pharmacies.map((pharmacy, index) => (
               <Card key={pharmacy._id || index} className="glass-card border-0">
                 <CardContent className="p-3">
@@ -159,27 +160,23 @@ export default function PatientDashboard() {
                           variant={"default"}
                           className="text-xs glass-button border-0"
                         >
-                          {pharmacy.stock > 0 ? "Open" : "Closed"}
+                          {pharmacy.isOpen ? "Open" : "Closed"}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-3 text-sm text-gray-400">
                         <span className="flex items-center">
                           <Navigation className="h-3 w-3 mr-1" />
-                          {pharmacy.price ? `₹${pharmacy.price}` : "N/A"}
+                          {pharmacy.distance} km
                         </span>
                         <span className="flex items-center">
                           <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                          {pharmacy.stock}
+                          {pharmacy.rating}
                         </span>
                       </div>
                     </div>
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        pharmacy.stock > 50
-                          ? "bg-green-500"
-                          : pharmacy.stock > 0
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
+                        pharmacy.isOpen ? "bg-green-500" : "bg-red-500"
                       }`}
                     ></div>
                   </div>
@@ -231,7 +228,7 @@ export default function PatientDashboard() {
             <SheetTitle className="text-white">Upload Options</SheetTitle>
             <SheetDescription className="text-gray-400">Choose what you want to upload</SheetDescription>
           </SheetHeader>
-          <div className="grid grid-cols-2 gap-4 py-6">
+          <div className="grid grid-cols-3 gap-4 py-6">
             <Link href="/patient/upload-flow/prescription">
               <Button
                 className="h-24 flex flex-col space-y-2 w-full glass-button border-0"
@@ -248,6 +245,15 @@ export default function PatientDashboard() {
               >
                 <ReceiptText className="h-8 w-8 text-purple-400" />
                 <span className="text-sm text-white">Receipt</span>
+              </Button>
+            </Link>
+            <Link href="/patient/scan">
+              <Button
+                className="h-24 flex flex-col space-y-2 w-full glass-button border-0"
+                onClick={() => setShowUploadOptions(false)}
+              >
+                <Camera className="h-8 w-8 text-green-400" />
+                <span className="text-sm text-white">Medicine Checker</span>
               </Button>
             </Link>
           </div>
