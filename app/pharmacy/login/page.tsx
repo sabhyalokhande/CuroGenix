@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Building2, ArrowLeft } from "lucide-react"
+import { CuroGenixLogo } from "@/components/ui/curogenix-logo"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -86,9 +87,8 @@ export default function PharmacyLogin() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center mb-8">
-          <Link href="/" className="flex items-center space-x-2 animate-liquid-flow">
-            <Building2 className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold gradient-text">CuroGenix</span>
+          <Link href="/" className="flex items-center animate-liquid-flow">
+            <CuroGenixLogo size="lg" />
           </Link>
         </div>
 

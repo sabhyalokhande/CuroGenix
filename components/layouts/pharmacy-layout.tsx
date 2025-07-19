@@ -4,9 +4,10 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Building2, Package, Upload, BarChart3, MapPin, Bell, Settings, Menu, User, LogOut } from "lucide-react"
+import { CuroGenixLogo } from "@/components/ui/curogenix-logo"
+import { Package, Upload, BarChart3, MapPin, Bell, Settings, Menu, User, LogOut } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
@@ -17,15 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-const navigation = [
-  { name: "Dashboard", href: "/pharmacy/dashboard", icon: Building2 },
-  { name: "Inventory Manager", href: "/pharmacy/inventory", icon: Package },
-  { name: "Upload CSV", href: "/pharmacy/upload", icon: Upload },
-  { name: "Price Check Score", href: "/pharmacy/price-check", icon: BarChart3 },
-  { name: "District Demand Map", href: "/pharmacy/demand-map", icon: MapPin },
-  { name: "Alerts & Messages", href: "/pharmacy/alerts", icon: Bell },
-  { name: "Profile & Settings", href: "/pharmacy/settings", icon: Settings },
-]
+
 
 interface PharmacyLayoutProps {
   children: React.ReactNode
@@ -33,7 +26,13 @@ interface PharmacyLayoutProps {
 
 export function PharmacyLayout({ children }: PharmacyLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [pharmacyName, setPharmacyName] = useState("Pharmacy")
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token')
+    router.push('/pharmacy/login')
+  }
 
   // Get current user and pharmacy info
   useEffect(() => {
@@ -72,9 +71,8 @@ export function PharmacyLayout({ children }: PharmacyLayoutProps) {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col">
             <div className="flex justify-between h-16 items-center">
-              <Link href="/pharmacy/dashboard" className="flex items-center space-x-2">
-                <Building2 className="h-8 w-8 text-blue-400" />
-                <span className="text-xl font-bold gradient-text">CuroGenix</span>
+              <Link href="/pharmacy/dashboard" className="flex items-center">
+                <CuroGenixLogo size="md" />
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -91,7 +89,7 @@ export function PharmacyLayout({ children }: PharmacyLayoutProps) {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem className="text-white hover:bg-white/10">
+                  <DropdownMenuItem className="text-white hover:bg-white/10" onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>

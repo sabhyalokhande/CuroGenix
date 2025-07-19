@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, ArrowLeft } from "lucide-react"
+import { CuroGenixLogo } from "@/components/ui/curogenix-logo"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -84,9 +85,8 @@ export default function GovernmentLogin() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center mb-8">
-          <Link href="/" className="flex items-center space-x-2 animate-liquid-flow">
-            <Shield className="h-8 w-8 text-purple-400" />
-            <span className="text-2xl font-bold gradient-text">CuroGenix</span>
+          <Link href="/" className="flex items-center animate-liquid-flow">
+            <CuroGenixLogo size="lg" />
           </Link>
         </div>
 

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CuroGenixLogo } from "@/components/ui/curogenix-logo"
 import {
   Heart,
   Shield,
@@ -285,7 +286,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="relative z-10 container mx-auto px-8 py-6 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <span className="text-3xl font-extrabold text-white tracking-tight">CuroGenix.</span>
+          <CuroGenixLogo size="lg" />
         </div>
         <nav className="hidden md:flex items-center space-x-4">
           <Link href="/">
