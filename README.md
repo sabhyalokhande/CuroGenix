@@ -35,9 +35,56 @@ _Built with the tools and technologies:_
 
 ---
 
-## 🧭 Overview
+## 🩺 Overview
+CuroGenix is a healthcare supply intelligence platform that detects anomalies in the public medicine distribution chain. It aims to prevent black-market activities and price shortages of essential medicines in rural areas by tracking medicine allocation and raising real-time alerts to the government for necessary action.
 
-A platform to intelligently monitor and streamline the healthcare supply chain using real-time data, predictive analytics, and automation to tackle essential medicine shortages.
+---
+
+**❓ Problem**
+
+The government sends large quantities of essential medicines to Public Health Organizations (PHOs) and other public entities in rural areas through the pharmaceutical supply chain.
+
+However, in many rural regions:
+ - Sufficient medicines are missing from their designated locations.
+ - End-users (rural citizens) often do not receive the medicines they need.
+ - This leads to panic, price gouging, and black-market resale of essential drugs.
+
+Where are these medicines going?
+
+---
+
+**🔍 Why This Problem Exists**
+
+- Medicines are dispatched by the government with batch numbers and assigned PHO details.
+- In practice, these medicines are diverted by middlemen or fraudulent pharmacies to other unintended locations.
+- As a result, PHOs don't receive their allocations, and rural patients are denied access to essential treatments.
+
+---
+
+**💡 Our Solution**
+
+CuroGenix introduces a real-time medicine tracking and verification system using OCR and barcode scanning.
+
+**How It Works:**
+
+**1. Medicine Packaging:**
+Each medicine batch has a unique barcode with key metadata (medicine name, batch number, allocated PHO).
+
+**2. OCR & Image Scan:**
+Field agents or local authorities scan the medicine using a mobile app, which:
+ - Extracts details via OCR.
+ - Detects the current location of the medicine.
+
+**3. Verification Engine:**
+The scanned data is verified against the central government database to:
+ - Confirm whether the medicine is at its intended PHO.
+ - Check for anomalies (e.g., wrong location, unallocated movement).
+
+**4. Alert System:**
+If an anomaly is detected:
+ - The system flags it and alerts the government.
+ - Authorities can identify the fraudulent entity (pharmacy, distributor, etc.).
+ - Investigations can begin immediately to correct the supply chain breach.
 
 ---
 
