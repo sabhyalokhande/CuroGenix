@@ -22,7 +22,8 @@ export default function AlertsSection() {
             expectedAt: item.allocatedLocation,
             status: "critical",
             reliability: 0.3,
-            pharmacy: item.reportedPharmacy,
+            pharmacy: item.pharmacyName,
+            pharmacyLocation: item.pharmacyLocation,
             lastAction: item.status === "pending" ? "" : item.status,
             date: item.timestamp ? new Date(item.timestamp).toISOString().slice(0, 16).replace("T", " ") : "",
           }))
@@ -84,7 +85,7 @@ export default function AlertsSection() {
               </div>
               <div className="mb-2">
                 <div className="text-xl font-extrabold text-white mb-1 leading-tight drop-shadow-sm">
-                  {alert.medicine} <span className="text-xs font-normal text-gray-400">({alert.batch})</span>
+                  {alert.medicine} {alert.batch ? <span className="text-xs font-normal text-gray-400">({alert.batch})</span> : null}
                 </div>
                 <div className="text-base text-gray-100 font-medium">
                   Found at <span className="font-semibold text-blue-400 underline underline-offset-2">{alert.foundAt}</span>
@@ -103,6 +104,9 @@ export default function AlertsSection() {
               </div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs text-gray-100 font-medium">Pharmacy: <span className="font-semibold text-blue-300 underline">{alert.pharmacy}</span></span>
+                {alert.pharmacyLocation && (
+                  <span className="text-xs text-gray-400 font-medium ml-2">Location: <span className="font-semibold text-purple-200">{alert.pharmacyLocation}</span></span>
+                )}
               </div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xs text-gray-100 font-medium">Last Action: <span className="font-semibold text-white">{alert.lastAction || 'None'}</span></span>
