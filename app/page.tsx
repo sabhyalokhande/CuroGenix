@@ -18,6 +18,10 @@ import {
 import { useState, useEffect } from "react"
 import Link from "next/link" // Import Link for navigation buttons
 
+type ShortageLevels = 'high' | 'medium' | 'low' | 'normal';
+type StateShortageData = { [state: string]: ShortageLevels };
+type ShortageData = { [drug: string]: StateShortageData };
+
 export default function HomePage() {
   // State to manage selected drug for map visualization
   const [selectedDrug, setSelectedDrug] = useState("Amoxicillin")
@@ -25,7 +29,7 @@ export default function HomePage() {
   const [svgContent, setSvgContent] = useState<string | null>(null)
 
   // Mock data for drug shortages across Indian states
-  const shortageData = {
+  const shortageData: ShortageData = {
     Amoxicillin: {
       Maharashtra: "high",
       Delhi: "medium",
@@ -268,8 +272,13 @@ export default function HomePage() {
          /* Map specific styles */
          .india-map-svg-container svg {
            width: 100%;
-           height: 100%; /* Ensure it scales proportionally to fill parent */
-           display: block; /* Remove any extra space below inline elements */
+           height: 100%;
+           display: flex;
+           max-width: 100%;
+           max-height: 100%;
+           object-fit: contain;
+           transform: scale(0.9);
+           transform-origin: center;
          }
         .india-map-svg-container svg path {
           fill: #000000; /* Black fill for states */
@@ -347,7 +356,7 @@ export default function HomePage() {
 
       {/* Medicine Shortage Elimination Portal with Map */}
       <section className="relative z-10 container mx-auto px-8 py-16">
-        <div className="dark-card p-8 rounded-3xl shadow-lg w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="dark-card p-8 rounded-3xl shadow-lg w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.35fr_0.65fr] gap-12">
           {/* Left Column: Map and Controls */}
           <div className="flex flex-col lg:col-span-1">
             <h2 className="text-3xl font-bold text-white mb-6 text-center">Medicine Shortage Map (India)</h2>
@@ -369,12 +378,11 @@ export default function HomePage() {
               </select>
             </div>
             {/* India Map SVG */}
-            <div className="w-full bg-black rounded-lg overflow-hidden flex items-center justify-center mx-auto mt-4 h-[800px]">
-              {" "}
-              {/* Set height to 800px and background to black */}
+            <div className="flex-1 bg-black rounded-xl overflow-hidden flex items-center justify-center p-4 min-h-[400px] max-h-[700px]" style={{ minWidth: '350px' }}>
               {svgContent ? (
                 <div
-                  className="india-map-svg-container w-full h-full"
+                  className="india-map-svg-container w-full h-full flex items-center justify-center"
+                  style={{ width: '100%', height: '100%' }}
                   dangerouslySetInnerHTML={{ __html: svgContent }}
                 />
               ) : (
@@ -399,14 +407,8 @@ export default function HomePage() {
           </div>
 
           {/* Right Column: Shortage List / Data Display */}
-          <div className="flex flex-col lg:col-span-1">
+          <div className="flex flex-col lg:col-span-1 min-w-[240px] max-w-[340px]">
             <h2 className="text-3xl font-bold text-white mb-6 text-center">Shortage Details</h2>
-
-            <div className="flex space-x-4 mb-8 justify-center">
-              <Button className="glass-button px-5 py-2">Current Shortages</Button>
-              <Button className="glass-button px-5 py-2">Report Shortage</Button>
-              <Button className="glass-button px-5 py-2">Resolved Issues</Button>
-            </div>
 
             {/* Shortage List */}
             <div className="space-y-4 flex-grow overflow-y-auto pr-2 custom-scrollbar">
@@ -423,7 +425,7 @@ export default function HomePage() {
                           {selectedDrug} ({state})
                         </p>
                         <p className="text-xs text-gray-400">
-                          Shortage level: {level.charAt(0).toUpperCase() + level.slice(1)}
+                          Shortage level: {(level as string).charAt(0).toUpperCase() + (level as string).slice(1)}
                         </p>
                       </div>
                     </div>
@@ -431,7 +433,7 @@ export default function HomePage() {
                       <span
                         className={`text-sm ${level === "high" ? "text-red-400" : level === "normal" ? "text-green-400" : "text-gray-400"}`}
                       >
-                        {level.toUpperCase()} IMPACT
+                        {(level as string).toUpperCase()} IMPACT
                       </span>
                       <ChevronRight className="h-4 w-4 text-gray-500" />
                     </div>
