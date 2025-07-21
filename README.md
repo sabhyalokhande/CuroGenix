@@ -1,4 +1,4 @@
-# INNOVATEX - CUROGENIX
+# CUROGENIX
 
 _Transforming Healthcare Supply with Intelligent Innovation_
 
