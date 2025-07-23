@@ -15,7 +15,17 @@ interface MedicineDetail {
   estPrice: string
 }
 
+// Add useHasMounted hook
+function useHasMounted() {
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+  return hasMounted;
+}
+
 export default function PrescriptionUploadFlow() {
+  const hasMounted = useHasMounted();
   const [step, setStep] = useState("capture") // capture, processing, review
   const [detectedMedicines, setDetectedMedicines] = useState<MedicineDetail[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
